@@ -5,9 +5,9 @@ See [https://github.com/bioinf-jku/TTUR](https://github.com/bioinf-jku/TTUR) for
 
 FID is a measure of similarity between two datasets of images. 
 It was shown to correlate well with human judgement of visual quality and is used most often used to evaluate the quality of samples of Generative Adversarial Networks.
-FID is calculated by computing the [Fréchet distance](https://en.wikipedia.org/wiki/Fr%C3%A9chet_distance) between two Gaussians fitted to the feature representations of the Inception network. 
+FID is calculated by computing the [Fréchet distance](https://en.wikipedia.org/wiki/Fr%C3%A9chet_distance) between two Gaussians fitted to feature representations of the Inception network. 
 
-Further insights and evaluation into the FID score can be found in [Are GANs Created Equal? A Large-Scale Study](https://arxiv.org/pdf/1711.10337.pdf)
+Further insights and an independent evaluation of the FID score can be found in [Are GANs Created Equal? A Large-Scale Study](https://arxiv.org/pdf/1711.10337.pdf)
 
 ## Usage
 
@@ -18,14 +18,14 @@ Requirements:
 - numpy
 - scipy
 
-To compute the FID score between two datasets, where each dataset is in an individual folder:
+To compute the FID score between two datasets, where images of each dataset are contained in an individual folder:
 ```
 ./fid_score.py path/to/dataset1 path/to/dataset2
 ```
 
 To run the evaluation on GPU, use the flag `--gpu N`, where `N` is the index of the GPU to use. 
 
-Note that the official implementation might give slightly different scores, as it uses pretrained weights from the Tensorflow Inception, not the PyTorch Inception used here.
+Note that the official implementation might give slightly different scores, as it uses pretrained weights from Tensorflow 's Inception, not PyTorch's Inception as used here.
 
 ### Using different layers for feature maps
 
@@ -49,5 +49,5 @@ This implementation is licensed under the Apache License 2.0.
 
 FID was introduced by Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler and Sepp Hochreiter in "GANs Trained by a Two Time-Scale Update Rule Converge to a Local Nash Equilibrium", see [https://arxiv.org/abs/1706.08500](https://arxiv.org/abs/1706.08500)
 
-The original implementation is taken from the Institute of Bioinformatics, JKU Linz, licensed under the Apache License 2.0.
+The original implementation is by the Institute of Bioinformatics, JKU Linz, licensed under the Apache License 2.0.
 See [https://github.com/bioinf-jku/TTUR](https://github.com/bioinf-jku/TTUR).
