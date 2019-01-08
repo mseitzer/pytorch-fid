@@ -11,7 +11,7 @@ distribution given by summary statistics (in pickle format).
 
 The FID is calculated by assuming that X_1 and X_2 are the activations of
 the pool_3 layer of the inception net for generated samples and real world
-samples respectivly.
+samples respectively.
 
 See --help to see further details.
 
@@ -132,10 +132,10 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
                inception net (like returned by the function 'get_predictions')
                for generated samples.
     -- mu2   : The sample mean over activations, precalculated on an 
-               representive data set.
+               representative data set.
     -- sigma1: The covariance matrix over activations for generated samples.
     -- sigma2: The covariance matrix over activations, precalculated on an 
-               representive data set.
+               representative data set.
 
     Returns:
     --   : The Frechet Distance.
