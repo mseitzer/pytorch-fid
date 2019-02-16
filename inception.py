@@ -39,8 +39,8 @@ class InceptionV3(nn.Module):
             layers is fully convolutional, it should be able to handle inputs
             of arbitrary size, so resizing might not be strictly needed
         normalize_input : bool
-            If true, normalizes the input to the statistics the pretrained
-            Inception network expects
+            If true, scales the input from range (0, 1) to the range the
+            pretrained Inception network expects, namely (-1, 1)
         requires_grad : bool
             If true, parameters of the model require gradient. Possibly useful
             for finetuning the network
@@ -128,10 +128,7 @@ class InceptionV3(nn.Module):
                               align_corners=False)
 
         if self.normalize_input:
-            x = x.clone()
-            x[:, 0] = x[:, 0] * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
-            x[:, 1] = x[:, 1] * (0.224 / 0.5) + (0.456 - 0.5) / 0.5
-            x[:, 2] = x[:, 2] * (0.225 / 0.5) + (0.406 - 0.5) / 0.5
+            x = 2 * x - 1  # Scale from range (0, 1) to range (-1, 1)
 
         for idx, block in enumerate(self.blocks):
             x = block(x)
