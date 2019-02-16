@@ -110,19 +110,22 @@ class InceptionV3(nn.Module):
         Parameters
         ----------
         inp : torch.autograd.Variable
-            Input tensor of shape Bx3xHxW. Values are expected to be in 
+            Input tensor of shape Bx3xHxW. Values are expected to be in
             range (0, 1)
 
         Returns
         -------
-        List of torch.autograd.Variable, corresponding to the selected output 
+        List of torch.autograd.Variable, corresponding to the selected output
         block, sorted ascending by index
         """
         outp = []
         x = inp
 
         if self.resize_input:
-            x = F.upsample(x, size=(299, 299), mode='bilinear')
+            x = F.interpolate(x,
+                              size=(299, 299),
+                              mode='bilinear',
+                              align_corners=False)
 
         if self.normalize_input:
             x = x.clone()
