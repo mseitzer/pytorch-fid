@@ -36,13 +36,17 @@ import os
 import pathlib
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-import torch
 import numpy as np
-from scipy.misc import imread
+import torch
 from scipy import linalg
-from torch.autograd import Variable
+from scipy.misc import imread
 from torch.nn.functional import adaptive_avg_pool2d
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    # If not tqdm is not available, provide a mock version of it
+    def tqdm(x): return x
 
 from inception import InceptionV3
 
@@ -65,8 +69,7 @@ def get_activations(files, model, batch_size=64, dims=2048,
     """Calculates the activations of the pool_3 layer for all images.
 
     Params:
-    -- images      : Numpy array of dimension (n_images, 3, hi, wi). The values
-                     must lie between 0 and 1.
+    -- files       : List of image files paths
     -- model       : Instance of inception model
     -- batch_size  : the images numpy array is split into batches with
                      batch size batch_size. A reasonable batch size depends
@@ -81,34 +84,32 @@ def get_activations(files, model, batch_size=64, dims=2048,
        query tensor.
     """
     model.eval()
-    
-    #calculate number of total files
-    d0 = len(files)
-    if batch_size > d0:
+
+    if batch_size > len(files):
         print(('Warning: batch size is bigger than the data size. '
                'Setting batch size to data size'))
-        batch_size = d0
+        batch_size = len(files)
 
-    n_batches = d0 // batch_size
+    n_batches = len(files) // batch_size
     n_used_imgs = n_batches * batch_size
 
     pred_arr = np.empty((n_used_imgs, dims))
-    
-    #Add processbar to know process
+
     for i in tqdm(range(n_batches)):
         if verbose:
             print('\rPropagating batch %d/%d' % (i + 1, n_batches),
                   end='', flush=True)
         start = i * batch_size
         end = start + batch_size
-        
-        # real batch of images here
-        images = np.array([imread(str(fn)).astype(np.float32) for fn in files[start:end]])
+
+        images = np.array([imread(str(f)).astype(np.float32)
+                           for f in files[start:end]])
+
+        # Reshape to (n_images, 3, height, width)
         images = images.transpose((0, 3, 1, 2))
         images /= 255
-        
+
         batch = torch.from_numpy(images).type(torch.FloatTensor)
-        batch = Variable(batch, volatile=True)
         if cuda:
             batch = batch.cuda()
 
@@ -139,10 +140,10 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     -- mu1   : Numpy array containing the activations of a layer of the
                inception net (like returned by the function 'get_predictions')
                for generated samples.
-    -- mu2   : The sample mean over activations, precalculated on an 
+    -- mu2   : The sample mean over activations, precalculated on an
                representative data set.
     -- sigma1: The covariance matrix over activations for generated samples.
-    -- sigma2: The covariance matrix over activations, precalculated on an 
+    -- sigma2: The covariance matrix over activations, precalculated on an
                representative data set.
 
     Returns:
@@ -188,8 +189,7 @@ def calculate_activation_statistics(files, model, batch_size=64,
                                     dims=2048, cuda=False, verbose=False):
     """Calculation of the statistics used by the FID.
     Params:
-    -- images      : Numpy array of dimension (n_images, 3, hi, wi). The values
-                     must lie between 0 and 1.
+    -- files       : List of image files paths
     -- model       : Instance of inception model
     -- batch_size  : The images numpy array is split into batches with
                      batch size batch_size. A reasonable batch size
@@ -204,14 +204,13 @@ def calculate_activation_statistics(files, model, batch_size=64,
     -- sigma : The covariance matrix of the activations of the pool_3 layer of
                the inception model.
     """
-    #         Instead of load all the images, we pass the file name list
     act = get_activations(files, model, batch_size, dims, cuda, verbose)
     mu = np.mean(act, axis=0)
     sigma = np.cov(act, rowvar=False)
     return mu, sigma
 
 
-def _compute_statistics_of_path(path, model, batch_size, dims, cuda, flag):
+def _compute_statistics_of_path(path, model, batch_size, dims, cuda):
     if path.endswith('.npz'):
         f = np.load(path)
         m, s = f['mu'][:], f['sigma'][:]
@@ -219,16 +218,6 @@ def _compute_statistics_of_path(path, model, batch_size, dims, cuda, flag):
     else:
         path = pathlib.Path(path)
         files = list(path.glob('*.jpg')) + list(path.glob('*.png'))
-
-#         imgs = np.array([imread(str(fn)).astype(np.float32) for fn in files])
-
-        # Bring images to shape (B, 3, H, W)
-#         imgs = imgs.transpose((0, 3, 1, 2))
-
-        # Rescale images to be between 0 and 1
-#         imgs /= 255
-
-#         Instead of load all the images, we pass the file name list
         m, s = calculate_activation_statistics(files, model, batch_size,
                                                dims, cuda)
 
@@ -246,11 +235,11 @@ def calculate_fid_given_paths(paths, batch_size, cuda, dims):
     model = InceptionV3([block_idx])
     if cuda:
         model.cuda()
-        
+
     m1, s1 = _compute_statistics_of_path(paths[0], model, batch_size,
-                                         dims, cuda, 1)
+                                         dims, cuda)
     m2, s2 = _compute_statistics_of_path(paths[1], model, batch_size,
-                                         dims, cuda, 0)
+                                         dims, cuda)
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
     return fid_value
