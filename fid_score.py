@@ -54,7 +54,7 @@ parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('path', type=str, nargs=2,
                     help=('Path to the generated images or '
                           'to .npz statistic files'))
-parser.add_argument('--batch-size', type=int, default=256,
+parser.add_argument('--batch-size', type=int, default=50,
                     help='Batch size to use')
 parser.add_argument('--dims', type=int, default=2048,
                     choices=list(InceptionV3.BLOCK_INDEX_BY_DIM),
@@ -64,16 +64,18 @@ parser.add_argument('-c', '--gpu', default='', type=str,
                     help='GPU to use (leave blank for CPU only)')
 
 
-def get_activations(files, model, batch_size=64, dims=2048,
+def get_activations(files, model, batch_size=50, dims=2048,
                     cuda=False, verbose=False):
     """Calculates the activations of the pool_3 layer for all images.
 
     Params:
     -- files       : List of image files paths
     -- model       : Instance of inception model
-    -- batch_size  : the images numpy array is split into batches with
-                     batch size batch_size. A reasonable batch size depends
-                     on the hardware.
+    -- batch_size  : Batch size of images for the model to process at once.
+                     Make sure that the number of samples is a multiple of
+                     the batch size, otherwise some samples are ignored. This
+                     behavior is retained to match the original FID score
+                     implementation.
     -- dims        : Dimensionality of features returned by Inception
     -- cuda        : If set to True, use GPU
     -- verbose     : If set to True and parameter out_step is given, the number
@@ -85,6 +87,9 @@ def get_activations(files, model, batch_size=64, dims=2048,
     """
     model.eval()
 
+    if len(files) % batch_size != 0:
+        print(('Warning: number of images is not a multiple of the '
+               'batch size. Some samples are going to be ignored.'))
     if batch_size > len(files):
         print(('Warning: batch size is bigger than the data size. '
                'Setting batch size to data size'))
@@ -185,7 +190,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
             np.trace(sigma2) - 2 * tr_covmean)
 
 
-def calculate_activation_statistics(files, model, batch_size=64,
+def calculate_activation_statistics(files, model, batch_size=50,
                                     dims=2048, cuda=False, verbose=False):
     """Calculation of the statistics used by the FID.
     Params:
