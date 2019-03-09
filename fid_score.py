@@ -294,13 +294,13 @@ if __name__ == '__main__':
                               'By default, uses pool3 features'))
     parser.add_argument('-c', '--gpu', default='', type=str,
                         help='GPU to use (leave blank for CPU only)')
-    parser.add_argument('--model_type', default='inception', type=str,
+    parser.add_argument('--model', default='inception', type=str,
                         help='inception or lenet')
     args = parser.parse_args()
     print(args)
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     paths = [args.true] + args.fake
 
-    results = calculate_fid_given_paths(paths, args.batch_size, args.gpu != '', args.dims, model_type=args.model_type)
+    results = calculate_fid_given_paths(paths, args.batch_size, args.gpu != '', args.dims, model_type=args.model)
     for p, m, s in results:
         print('FID (%s): %.2f (%.3f)' % (p, m, s))
