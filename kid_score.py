@@ -34,10 +34,12 @@ limitations under the License.
 """
 import os
 import pathlib
+import sys
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import numpy as np
 import torch
+from sklearn.metrics.pairwise import polynomial_kernel
 from scipy import linalg
 from scipy.misc import imread
 from torch.nn.functional import adaptive_avg_pool2d
@@ -123,86 +125,6 @@ def get_activations(files, model, batch_size=50, dims=2048,
     return pred_arr
 
 
-def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
-    """Numpy implementation of the Frechet Distance.
-    The Frechet distance between two multivariate Gaussians X_1 ~ N(mu_1, C_1)
-    and X_2 ~ N(mu_2, C_2) is
-            d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2)).
-
-    Stable version by Dougal J. Sutherland.
-
-    Params:
-    -- mu1   : Numpy array containing the activations of a layer of the
-               inception net (like returned by the function 'get_predictions')
-               for generated samples.
-    -- mu2   : The sample mean over activations, precalculated on an
-               representative data set.
-    -- sigma1: The covariance matrix over activations for generated samples.
-    -- sigma2: The covariance matrix over activations, precalculated on an
-               representative data set.
-
-    Returns:
-    --   : The Frechet Distance.
-    """
-
-    mu1 = np.atleast_1d(mu1)
-    mu2 = np.atleast_1d(mu2)
-
-    sigma1 = np.atleast_2d(sigma1)
-    sigma2 = np.atleast_2d(sigma2)
-
-    assert mu1.shape == mu2.shape, \
-        'Training and test mean vectors have different lengths'
-    assert sigma1.shape == sigma2.shape, \
-        'Training and test covariances have different dimensions'
-
-    diff = mu1 - mu2
-
-    # Product might be almost singular
-    covmean, _ = linalg.sqrtm(sigma1.dot(sigma2), disp=False)
-    if not np.isfinite(covmean).all():
-        msg = ('fid calculation produces singular product; '
-               'adding %s to diagonal of cov estimates') % eps
-        print(msg)
-        offset = np.eye(sigma1.shape[0]) * eps
-        covmean = linalg.sqrtm((sigma1 + offset).dot(sigma2 + offset))
-
-    # Numerical error might give slight imaginary component
-    if np.iscomplexobj(covmean):
-        if not np.allclose(np.diagonal(covmean).imag, 0, atol=1e-3):
-            m = np.max(np.abs(covmean.imag))
-            raise ValueError('Imaginary component {}'.format(m))
-        covmean = covmean.real
-
-    tr_covmean = np.trace(covmean)
-
-    return (diff.dot(diff) + np.trace(sigma1) +
-            np.trace(sigma2) - 2 * tr_covmean)
-
-
-def calculate_activation_statistics(act):
-    """Calculation of the statistics used by the FID.
-    Params:
-    -- files       : List of image files paths
-    -- model       : Instance of inception model
-    -- batch_size  : The images numpy array is split into batches with
-                     batch size batch_size. A reasonable batch size
-                     depends on the hardware.
-    -- dims        : Dimensionality of features returned by Inception
-    -- cuda        : If set to True, use GPU
-    -- verbose     : If set to True and parameter out_step is given, the
-                     number of calculated batches is reported.
-    Returns:
-    -- mu    : The mean over samples of the activations of the pool_3 layer of
-               the inception model.
-    -- sigma : The covariance matrix of the activations of the pool_3 layer of
-               the inception model.
-    """
-    mu = np.mean(act, axis=0)
-    sigma = np.cov(act, rowvar=False)
-    return mu, sigma
-
-
 def extract_lenet_features(imgs, net):
     net.eval()
     feats = []
@@ -218,24 +140,27 @@ def extract_lenet_features(imgs, net):
 
 
 def _compute_activations(path, model, batch_size, dims, cuda, model_type):
+    # if path.endswith('.npz'):
+    #     f = np.load(path)
+    #     m, s = f['mu'][:], f['sigma'][:]
+    #     f.close()
     if not type(path) == np.ndarray:
         import glob
         jpg = os.path.join(path, '*.jpg')
         png = os.path.join(path, '*.png')
         path = glob.glob(jpg) + glob.glob(png)
-        if len(path) > 25000:
+        if len(path) > 50000:
             import random
             random.shuffle(path)
-            path = path[:25000]
+            path = path[:50000]
     if model_type == 'inception':
         act = get_activations(path, model, batch_size, dims, cuda)
     elif model_type == 'lenet':
         act = extract_lenet_features(path, model)
-
     return act
 
 
-def calculate_fid_given_paths(paths, batch_size, cuda, dims, bootstrap=True, n_bootstraps=10, model_type='inception'):
+def calculate_kid_given_paths(paths, batch_size, cuda, dims, model_type='inception'):
     """Calculates the FID of two paths"""
     pths = []
     for p in paths:
@@ -245,13 +170,11 @@ def calculate_fid_given_paths(paths, batch_size, cuda, dims, bootstrap=True, n_b
             pths.append(p)
         elif p.endswith('.npy'):
             np_imgs = np.load(p)
-            if np_imgs.shape[0] > 25000:
-                np_imgs = np_imgs[:50000]
+            if np_imgs.shape[0] > 50000: np_imgs = np_imgs[np.random.permutation(np.arange(np_imgs.shape[0]))][:50000]
             pths.append(np_imgs)
 
-    block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
-
     if model_type == 'inception':
+        block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
         model = InceptionV3([block_idx])
     elif model_type == 'lenet':
         model = torch.load('./lenet.pth')
@@ -259,23 +182,139 @@ def calculate_fid_given_paths(paths, batch_size, cuda, dims, bootstrap=True, n_b
        model.cuda()
 
     act_true = _compute_activations(pths[0], model, batch_size, dims, cuda, model_type)
-    n_bootstraps = n_bootstraps if bootstrap else 1
     pths = pths[1:]
     results = []
     for j, pth in enumerate(pths):
         print(paths[j+1])
         actj = _compute_activations(pth, model, batch_size, dims, cuda, model_type)
-        fid_values = np.zeros((n_bootstraps))
-        with tqdm(range(n_bootstraps), desc='FID') as bar:
-            for i in bar:
-                act1_bs = act_true[np.random.choice(act_true.shape[0], act_true.shape[0], replace=True)]
-                act2_bs = actj[np.random.choice(actj.shape[0], actj.shape[0], replace=True)]
-                m1, s1 = calculate_activation_statistics(act1_bs)
-                m2, s2 = calculate_activation_statistics(act2_bs)
-                fid_values[i] = calculate_frechet_distance(m1, s1, m2, s2)
-                bar.set_postfix({'mean': fid_values[:i+1].mean()})
-        results.append((paths[j+1], fid_values.mean(), fid_values.std()))
+        kid_values = polynomial_mmd_averages(act_true, actj, n_subsets=100)
+        results.append((paths[j+1], kid_values[0].mean(), kid_values[0].std()))
     return results
+
+def _sqn(arr):
+    flat = np.ravel(arr)
+    return flat.dot(flat)
+
+
+def polynomial_mmd_averages(codes_g, codes_r, n_subsets=50, subset_size=1000,
+                            ret_var=True, output=sys.stdout, **kernel_args):
+    m = min(codes_g.shape[0], codes_r.shape[0])
+    mmds = np.zeros(n_subsets)
+    if ret_var:
+        vars = np.zeros(n_subsets)
+    choice = np.random.choice
+
+    with tqdm(range(n_subsets), desc='MMD', file=output) as bar:
+        for i in bar:
+            g = codes_g[choice(len(codes_g), subset_size, replace=False)]
+            r = codes_r[choice(len(codes_r), subset_size, replace=False)]
+            o = polynomial_mmd(g, r, **kernel_args, var_at_m=m, ret_var=ret_var)
+            if ret_var:
+                mmds[i], vars[i] = o
+            else:
+                mmds[i] = o
+            bar.set_postfix({'mean': mmds[:i+1].mean()})
+    return (mmds, vars) if ret_var else mmds
+
+
+def polynomial_mmd(codes_g, codes_r, degree=3, gamma=None, coef0=1,
+                   var_at_m=None, ret_var=True):
+    # use  k(x, y) = (gamma <x, y> + coef0)^degree
+    # default gamma is 1 / dim
+    X = codes_g
+    Y = codes_r
+
+    K_XX = polynomial_kernel(X, degree=degree, gamma=gamma, coef0=coef0)
+    K_YY = polynomial_kernel(Y, degree=degree, gamma=gamma, coef0=coef0)
+    K_XY = polynomial_kernel(X, Y, degree=degree, gamma=gamma, coef0=coef0)
+
+    return _mmd2_and_variance(K_XX, K_XY, K_YY,
+                              var_at_m=var_at_m, ret_var=ret_var)
+
+def _mmd2_and_variance(K_XX, K_XY, K_YY, unit_diagonal=False,
+                       mmd_est='unbiased', block_size=1024,
+                       var_at_m=None, ret_var=True):
+    # based on
+    # https://github.com/dougalsutherland/opt-mmd/blob/master/two_sample/mmd.py
+    # but changed to not compute the full kernel matrix at once
+    m = K_XX.shape[0]
+    assert K_XX.shape == (m, m)
+    assert K_XY.shape == (m, m)
+    assert K_YY.shape == (m, m)
+    if var_at_m is None:
+        var_at_m = m
+
+    # Get the various sums of kernels that we'll use
+    # Kts drop the diagonal, but we don't need to compute them explicitly
+    if unit_diagonal:
+        diag_X = diag_Y = 1
+        sum_diag_X = sum_diag_Y = m
+        sum_diag2_X = sum_diag2_Y = m
+    else:
+        diag_X = np.diagonal(K_XX)
+        diag_Y = np.diagonal(K_YY)
+
+        sum_diag_X = diag_X.sum()
+        sum_diag_Y = diag_Y.sum()
+
+        sum_diag2_X = _sqn(diag_X)
+        sum_diag2_Y = _sqn(diag_Y)
+
+    Kt_XX_sums = K_XX.sum(axis=1) - diag_X
+    Kt_YY_sums = K_YY.sum(axis=1) - diag_Y
+    K_XY_sums_0 = K_XY.sum(axis=0)
+    K_XY_sums_1 = K_XY.sum(axis=1)
+
+    Kt_XX_sum = Kt_XX_sums.sum()
+    Kt_YY_sum = Kt_YY_sums.sum()
+    K_XY_sum = K_XY_sums_0.sum()
+
+    if mmd_est == 'biased':
+        mmd2 = ((Kt_XX_sum + sum_diag_X) / (m * m)
+                + (Kt_YY_sum + sum_diag_Y) / (m * m)
+                - 2 * K_XY_sum / (m * m))
+    else:
+        assert mmd_est in {'unbiased', 'u-statistic'}
+        mmd2 = (Kt_XX_sum + Kt_YY_sum) / (m * (m-1))
+        if mmd_est == 'unbiased':
+            mmd2 -= 2 * K_XY_sum / (m * m)
+        else:
+            mmd2 -= 2 * (K_XY_sum - np.trace(K_XY)) / (m * (m-1))
+
+    if not ret_var:
+        return mmd2
+
+    Kt_XX_2_sum = _sqn(K_XX) - sum_diag2_X
+    Kt_YY_2_sum = _sqn(K_YY) - sum_diag2_Y
+    K_XY_2_sum = _sqn(K_XY)
+
+    dot_XX_XY = Kt_XX_sums.dot(K_XY_sums_1)
+    dot_YY_YX = Kt_YY_sums.dot(K_XY_sums_0)
+
+    m1 = m - 1
+    m2 = m - 2
+    zeta1_est = (
+        1 / (m * m1 * m2) * (
+            _sqn(Kt_XX_sums) - Kt_XX_2_sum + _sqn(Kt_YY_sums) - Kt_YY_2_sum)
+        - 1 / (m * m1)**2 * (Kt_XX_sum**2 + Kt_YY_sum**2)
+        + 1 / (m * m * m1) * (
+            _sqn(K_XY_sums_1) + _sqn(K_XY_sums_0) - 2 * K_XY_2_sum)
+        - 2 / m**4 * K_XY_sum**2
+        - 2 / (m * m * m1) * (dot_XX_XY + dot_YY_YX)
+        + 2 / (m**3 * m1) * (Kt_XX_sum + Kt_YY_sum) * K_XY_sum
+    )
+    zeta2_est = (
+        1 / (m * m1) * (Kt_XX_2_sum + Kt_YY_2_sum)
+        - 1 / (m * m1)**2 * (Kt_XX_sum**2 + Kt_YY_sum**2)
+        + 2 / (m * m) * K_XY_2_sum
+        - 2 / m**4 * K_XY_sum**2
+        - 4 / (m * m * m1) * (dot_XX_XY + dot_YY_YX)
+        + 4 / (m**3 * m1) * (Kt_XX_sum + Kt_YY_sum) * K_XY_sum
+    )
+    var_est = (4 * (var_at_m - 2) / (var_at_m * (var_at_m - 1)) * zeta1_est
+               + 2 / (var_at_m * (var_at_m - 1)) * zeta2_est)
+
+    return mmd2, var_est
 
 
 if __name__ == '__main__':
@@ -299,6 +338,6 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     paths = [args.true] + args.fake
 
-    results = calculate_fid_given_paths(paths, args.batch_size, args.gpu != '', args.dims, model_type=args.model_type)
+    results = calculate_kid_given_paths(paths, args.batch_size, args.gpu != '', args.dims, model_type=args.model_type)
     for p, m, s in results:
-        print('FID (%s): %.2f (%.3f)' % (p, m, s))
+        print('KID (%s): %.3f (%.3f)' % (p, m, s))
