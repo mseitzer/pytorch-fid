@@ -111,7 +111,7 @@ class InceptionV3(nn.Module):
         ----------
         inp : torch.autograd.Variable
             Input tensor of shape Bx3xHxW. Values are expected to be in
-            range (0, 1)
+            range (0.0, 1.0)
 
         Returns
         -------

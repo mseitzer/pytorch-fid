@@ -1,36 +1,5 @@
 #!/usr/bin/env python3
-"""Calculates the Frechet Inception Distance (FID) to evalulate GANs
-
-The FID metric calculates the distance between two distributions of images.
-Typically, we have summary statistics (mean & covariance matrix) of one
-of these distributions, while the 2nd distribution is given by a GAN.
-
-When run as a stand-alone program, it compares the distribution of
-images that are stored as PNG/JPEG at a specified location with a
-distribution given by summary statistics (in pickle format).
-
-The FID is calculated by assuming that X_1 and X_2 are the activations of
-the pool_3 layer of the inception net for generated samples and real world
-samples respectively.
-
-See --help to see further details.
-
-Code apapted from https://github.com/bioinf-jku/TTUR to use PyTorch instead
-of Tensorflow
-
-Copyright 2018 Institute of Bioinformatics, JKU Linz
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+"""Calculates the Kernel Inception Distance (KID) to evalulate GANs
 """
 import os
 import pathlib
@@ -140,10 +109,6 @@ def extract_lenet_features(imgs, net):
 
 
 def _compute_activations(path, model, batch_size, dims, cuda, model_type):
-    # if path.endswith('.npz'):
-    #     f = np.load(path)
-    #     m, s = f['mu'][:], f['sigma'][:]
-    #     f.close()
     if not type(path) == np.ndarray:
         import glob
         jpg = os.path.join(path, '*.jpg')
@@ -161,7 +126,7 @@ def _compute_activations(path, model, batch_size, dims, cuda, model_type):
 
 
 def calculate_kid_given_paths(paths, batch_size, cuda, dims, model_type='inception'):
-    """Calculates the FID of two paths"""
+    """Calculates the KID of two paths"""
     pths = []
     for p in paths:
         if not os.path.exists(p):
@@ -177,7 +142,7 @@ def calculate_kid_given_paths(paths, batch_size, cuda, dims, model_type='incepti
         block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
         model = InceptionV3([block_idx])
     elif model_type == 'lenet':
-        model = torch.load('./lenet.pth')
+        model = torch.load('./models/lenet.pth')
     if cuda:
        model.cuda()
 

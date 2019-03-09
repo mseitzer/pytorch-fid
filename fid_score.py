@@ -47,7 +47,7 @@ try:
 except ImportError:
     # If not tqdm is not available, provide a mock version of it
     def tqdm(x): return x
-
+#from models import lenet
 from inception import InceptionV3
 
 
@@ -254,7 +254,7 @@ def calculate_fid_given_paths(paths, batch_size, cuda, dims, bootstrap=True, n_b
     if model_type == 'inception':
         model = InceptionV3([block_idx])
     elif model_type == 'lenet':
-        model = torch.load('./lenet.pth')
+        model = torch.load('./models/lenet.pth')
     if cuda:
        model.cuda()
 
