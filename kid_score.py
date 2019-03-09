@@ -19,8 +19,8 @@ except ImportError:
     # If not tqdm is not available, provide a mock version of it
     def tqdm(x): return x
 
-from inception import InceptionV3
-
+from models.inception import InceptionV3
+from models.lenet import LeNet5
 
 def get_activations(files, model, batch_size=50, dims=2048,
                     cuda=False, verbose=False):
@@ -142,7 +142,8 @@ def calculate_kid_given_paths(paths, batch_size, cuda, dims, model_type='incepti
         block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
         model = InceptionV3([block_idx])
     elif model_type == 'lenet':
-        model = torch.load('./models/lenet.pth')
+        model = LeNet5()
+        model.load_state_dict(torch.load('./models/lenet.pth'))
     if cuda:
        model.cuda()
 
