@@ -35,12 +35,32 @@ limitations under the License.
 import os
 import pathlib
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from multiprocessing import cpu_count
 
 import numpy as np
 import torch
 from scipy import linalg
-from scipy.misc import imread
 from torch.nn.functional import adaptive_avg_pool2d
+from torch.utils.data import DataLoader, Dataset
+import torchvision.transforms as TF
+from PIL import Image
+
+
+class ImagesPathDataset(Dataset):
+    def __init__(self, files, transforms=None):
+        self.files = files
+        self.transforms = transforms
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, i):
+        path = self.files[i]
+        img = Image.open(path).convert('RGB')
+        if self.transforms is not None:
+            img = self.transforms(img)
+        return img
+
 
 try:
     from tqdm import tqdm
@@ -95,30 +115,27 @@ def get_activations(files, model, batch_size=50, dims=2048,
                'Setting batch size to data size'))
         batch_size = len(files)
 
-    n_batches = len(files) // batch_size
+    ds = ImagesPathDataset(files, transforms=TF.ToTensor())
+    dl = DataLoader(ds, batch_size=batch_size, drop_last=True,
+            num_workers=2 * cpu_count(), pin_memory=cuda)
+
+    n_batches = len(dl)
     n_used_imgs = n_batches * batch_size
 
     pred_arr = np.empty((n_used_imgs, dims))
 
-    for i in tqdm(range(n_batches)):
+    for i, batch in enumerate(tqdm(dl)):
         if verbose:
             print('\rPropagating batch %d/%d' % (i + 1, n_batches),
                   end='', flush=True)
         start = i * batch_size
         end = start + batch_size
 
-        images = np.array([imread(str(f)).astype(np.float32)
-                           for f in files[start:end]])
-
-        # Reshape to (n_images, 3, height, width)
-        images = images.transpose((0, 3, 1, 2))
-        images /= 255
-
-        batch = torch.from_numpy(images).type(torch.FloatTensor)
         if cuda:
-            batch = batch.cuda()
+            batch = batch.cuda(non_blocking=True)
 
-        pred = model(batch)[0]
+        with torch.no_grad():
+            pred = model(batch)[0]
 
         # If model output is not scalar, apply global spatial average pooling.
         # This happens if you choose a dimensionality not equal 2048.
