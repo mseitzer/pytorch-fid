@@ -9,9 +9,10 @@ FID is calculated by computing the [Fréchet distance](https://en.wikipedia.org/
 
 Further insights and an independent evaluation of the FID score can be found in [Are GANs Created Equal? A Large-Scale Study](https://arxiv.org/abs/1711.10337).
 
-**Note that the official implementation most likely gives slightly different scores**, as it uses pretrained weights from Tensorflow 's Inception, not PyTorch's Inception as used here.
-If you report FID scores in your paper, and you want them to be comparable to FID scores reported in other papers, you should use [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR).
+**Note that the official implementation gives slightly different scores.** If you report FID scores in your paper, and you want them to be exactly comparable to FID scores reported in other papers, you should use [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR).
 You can still use this version if you want a quick FID estimate without installing Tensorflow.
+
+**Update:** The weights and the model are now exactly the same as in the official Tensorflow implementation, and I verified them to give the same results (around `1e-8` mean absolute error) on single inputs on my platform. However, due to differences in the image interpolation implementation and library backends, FID results might still differ slightly from the original implementation. A test I ran (details are to come) resulted in `.08` absolute error and `0.0009` relative error. 
 
 ## Usage
 
