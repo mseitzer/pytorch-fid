@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import models
+import torchvision
 
 try:
     from torchvision.models.utils import load_state_dict_from_url
@@ -79,7 +79,7 @@ class InceptionV3(nn.Module):
         if use_fid_inception:
             inception = fid_inception_v3()
         else:
-            inception = models.inception_v3(pretrained=True)
+            inception = _inception_v3(pretrained=True)
 
         # Block 0: input to maxpool1
         block0 = [
@@ -163,6 +163,24 @@ class InceptionV3(nn.Module):
         return outp
 
 
+def _inception_v3(*args, **kwargs):
+    """Wraps `torchvision.models.inception_v3`
+
+    Skips default weight inititialization if supported by torchvision version.
+    See https://github.com/mseitzer/pytorch-fid/issues/28.
+    """
+    try:
+        version = tuple(map(int, torchvision.__version__.split('.')[:2]))
+    except ValueError:
+        # Just a caution against weird version strings
+        version = (0,)
+
+    if version >= (0, 6):
+        kwargs['init_weights'] = False
+
+    return torchvision.models.inception_v3(*args, **kwargs)
+
+
 def fid_inception_v3():
     """Build pretrained Inception model for FID computation
 
@@ -172,9 +190,9 @@ def fid_inception_v3():
     This method first constructs torchvision's Inception and then patches the
     necessary parts that are different in the FID Inception model.
     """
-    inception = models.inception_v3(num_classes=1008,
-                                    aux_logits=False,
-                                    pretrained=False)
+    inception = _inception_v3(num_classes=1008,
+                              aux_logits=False,
+                              pretrained=False)
     inception.Mixed_5b = FIDInceptionA(192, pool_features=32)
     inception.Mixed_5c = FIDInceptionA(256, pool_features=64)
     inception.Mixed_5d = FIDInceptionA(288, pool_features=64)
@@ -190,7 +208,7 @@ def fid_inception_v3():
     return inception
 
 
-class FIDInceptionA(models.inception.InceptionA):
+class FIDInceptionA(torchvision.models.inception.InceptionA):
     """InceptionA block patched for FID computation"""
     def __init__(self, in_channels, pool_features):
         super(FIDInceptionA, self).__init__(in_channels, pool_features)
@@ -215,7 +233,7 @@ class FIDInceptionA(models.inception.InceptionA):
         return torch.cat(outputs, 1)
 
 
-class FIDInceptionC(models.inception.InceptionC):
+class FIDInceptionC(torchvision.models.inception.InceptionC):
     """InceptionC block patched for FID computation"""
     def __init__(self, in_channels, channels_7x7):
         super(FIDInceptionC, self).__init__(in_channels, channels_7x7)
@@ -243,7 +261,7 @@ class FIDInceptionC(models.inception.InceptionC):
         return torch.cat(outputs, 1)
 
 
-class FIDInceptionE_1(models.inception.InceptionE):
+class FIDInceptionE_1(torchvision.models.inception.InceptionE):
     """First InceptionE block patched for FID computation"""
     def __init__(self, in_channels):
         super(FIDInceptionE_1, self).__init__(in_channels)
@@ -276,7 +294,7 @@ class FIDInceptionE_1(models.inception.InceptionE):
         return torch.cat(outputs, 1)
 
 
-class FIDInceptionE_2(models.inception.InceptionE):
+class FIDInceptionE_2(torchvision.models.inception.InceptionE):
     """Second InceptionE block patched for FID computation"""
     def __init__(self, in_channels):
         super(FIDInceptionE_2, self).__init__(in_channels)
