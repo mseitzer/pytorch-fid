@@ -296,7 +296,7 @@ if __name__ == '__main__':
                               'By default, uses pool3 features'))
     parser.add_argument('-c', '--gpu', default='', type=str,
                         help='GPU to use (leave blank for CPU only)')
-    parser.add_argument('--model, default='inception', type=str,
+    parser.add_argument('--model', default='inception', type=str,
                         help='inception or lenet')
     args = parser.parse_args()
     print(args)
