@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Calculates the Frechet Inception Distance (FID) to evalulate GANs
 
 The FID metric calculates the distance between two distributions of images.
@@ -49,12 +48,9 @@ except ImportError:
     # If not tqdm is not available, provide a mock version of it
     def tqdm(x): return x
 
-from inception import InceptionV3
+from pytorch_fid.inception import InceptionV3
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-parser.add_argument('path', type=str, nargs=2,
-                    help=('Path to the generated images or '
-                          'to .npz statistic files'))
 parser.add_argument('--batch-size', type=int, default=50,
                     help='Batch size to use')
 parser.add_argument('--dims', type=int, default=2048,
@@ -63,6 +59,9 @@ parser.add_argument('--dims', type=int, default=2048,
                           'By default, uses pool3 features'))
 parser.add_argument('-c', '--gpu', default='', type=str,
                     help='GPU to use (leave blank for CPU only)')
+parser.add_argument('path', type=str, nargs=2,
+                    help=('Paths to the generated images or '
+                          'to .npz statistic files'))
 
 
 def imread(filename):
@@ -72,8 +71,7 @@ def imread(filename):
     return np.asarray(Image.open(filename), dtype=np.uint8)[..., :3]
 
 
-def get_activations(files, model, batch_size=50, dims=2048,
-                    cuda=False, verbose=False):
+def get_activations(files, model, batch_size=50, dims=2048, cuda=False):
     """Calculates the activations of the pool_3 layer for all images.
 
     Params:
@@ -86,8 +84,7 @@ def get_activations(files, model, batch_size=50, dims=2048,
                      implementation.
     -- dims        : Dimensionality of features returned by Inception
     -- cuda        : If set to True, use GPU
-    -- verbose     : If set to True and parameter out_step is given, the number
-                     of calculated batches is reported.
+
     Returns:
     -- A numpy array of dimension (num images, dims) that contains the
        activations of the given tensor when feeding inception with the
@@ -103,9 +100,6 @@ def get_activations(files, model, batch_size=50, dims=2048,
     pred_arr = np.empty((len(files), dims))
 
     for i in tqdm(range(0, len(files), batch_size)):
-        if verbose:
-            print('\rPropagating batch %d/%d' % (i + 1, n_batches),
-                  end='', flush=True)
         start = i
         end = i + batch_size
 
@@ -128,9 +122,6 @@ def get_activations(files, model, batch_size=50, dims=2048,
             pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
 
         pred_arr[start:end] = pred.cpu().data.numpy().reshape(pred.size(0), -1)
-
-    if verbose:
-        print(' done')
 
     return pred_arr
 
@@ -192,8 +183,8 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
             np.trace(sigma2) - 2 * tr_covmean)
 
 
-def calculate_activation_statistics(files, model, batch_size=50,
-                                    dims=2048, cuda=False, verbose=False):
+def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
+                                    cuda=False):
     """Calculation of the statistics used by the FID.
     Params:
     -- files       : List of image files paths
@@ -203,15 +194,14 @@ def calculate_activation_statistics(files, model, batch_size=50,
                      depends on the hardware.
     -- dims        : Dimensionality of features returned by Inception
     -- cuda        : If set to True, use GPU
-    -- verbose     : If set to True and parameter out_step is given, the
-                     number of calculated batches is reported.
+
     Returns:
     -- mu    : The mean over samples of the activations of the pool_3 layer of
                the inception model.
     -- sigma : The covariance matrix of the activations of the pool_3 layer of
                the inception model.
     """
-    act = get_activations(files, model, batch_size, dims, cuda, verbose)
+    act = get_activations(files, model, batch_size, dims, cuda)
     mu = np.mean(act, axis=0)
     sigma = np.cov(act, rowvar=False)
     return mu, sigma
@@ -252,7 +242,7 @@ def calculate_fid_given_paths(paths, batch_size, cuda, dims):
     return fid_value
 
 
-if __name__ == '__main__':
+def main():
     args = parser.parse_args()
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
@@ -261,3 +251,7 @@ if __name__ == '__main__':
                                           args.gpu != '',
                                           args.dims)
     print('FID: ', fid_value)
+
+
+if __name__ == '__main__':
+    main()

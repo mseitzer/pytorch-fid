@@ -20,6 +20,7 @@ Requirements:
 - python3
 - pytorch
 - torchvision
+- pillow
 - numpy
 - scipy
 
