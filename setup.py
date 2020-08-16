@@ -7,9 +7,9 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='pytorch-fid',
-    version='1.0.0',
+    version='0.1.0',
     author='Max Seitzer',
-    author_email='contact@max-seitzer.de',
+    author_email='current.address@unknown.invalid',
     description=('Package for calculating Frechet Inception Distance (FID) '
                  'using PyTorch'),
     long_description=long_description,
@@ -19,7 +19,6 @@ setuptools.setup(
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: Apache 2.0 License',
-        'Operating System :: OS Independent',
     ],
     python_requires='>=3.5',
     entry_points={
