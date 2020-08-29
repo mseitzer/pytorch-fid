@@ -68,7 +68,7 @@ def imread(filename):
     """
     Loads an image file into a (height, width, 3) uint8 ndarray.
     """
-    return np.asarray(Image.open(filename), dtype=np.uint8)[..., :3]
+    return np.asarray(Image.open(filename).convert('RGB'), dtype=np.uint8)[..., :3]
 
 
 def get_activations(files, model, batch_size=50, dims=2048, cuda=False):
