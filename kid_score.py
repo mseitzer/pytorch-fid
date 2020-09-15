@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from sklearn.metrics.pairwise import polynomial_kernel
 from scipy import linalg
-from scipy.misc import imread
+from PIL import Image
 from torch.nn.functional import adaptive_avg_pool2d
 
 try:
@@ -69,9 +69,8 @@ def get_activations(files, model, batch_size=50, dims=2048,
             images = np.copy(files[start:end]) + 1
             images /= 2.
         else:
-            images = np.array([imread(str(f)).astype(np.float32)
-                               for f in files[start:end]])
-            images /= 255.
+            images = [np.array(Image.open(str(f))) for f in files[start:end]]
+            images = np.stack(images).astype(np.float32) / 255.
             # Reshape to (n_images, 3, height, width)
             images = images.transpose((0, 3, 1, 2))
 
@@ -297,7 +296,7 @@ if __name__ == '__main__':
                               'By default, uses pool3 features'))
     parser.add_argument('-c', '--gpu', default='', type=str,
                         help='GPU to use (leave blank for CPU only)')
-    parser.add_argument('--model, default='inception', type=str,
+    parser.add_argument('--model', default='inception', type=str,
                         help='inception or lenet')
     args = parser.parse_args()
     print(args)
