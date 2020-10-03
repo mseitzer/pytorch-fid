@@ -105,7 +105,7 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu'):
         batch_size = len(files)
          
     ds = ImagesPathDataset(files, transforms=TF.ToTensor())
-    dl = torch.utils.data.DataLoader(ds, batch_size=batch_size, drop_last=False, num_workers=cpu_count())
+    dl = torch.utils.data.DataLoader(ds, batch_size=batch_size, drop_last=True, num_workers=cpu_count())
 
     pred_arr = np.empty((len(files), dims))
 
