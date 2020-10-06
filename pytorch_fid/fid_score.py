@@ -54,6 +54,8 @@ from pytorch_fid.inception import InceptionV3
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('--batch-size', type=int, default=50,
                     help='Batch size to use')
+parser.add_argument('--device', type=str, default=None,
+                    help='Device to use. Like cuda, cuda:0 or cpu')
 parser.add_argument('--dims', type=int, default=2048,
                     choices=list(InceptionV3.BLOCK_INDEX_BY_DIM),
                     help=('Dimensionality of Inception features to use. '
@@ -244,7 +246,11 @@ def calculate_fid_given_paths(paths, batch_size, device, dims):
 
 def main():
     args = parser.parse_args()
-    device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
+
+    if args.device is None:
+        device = torch.device('cuda' if (torch.cuda.is_available()) else 'cpu')
+    else:
+        device = torch.device(args.device)
 
     fid_value = calculate_fid_given_paths(args.path,
                                           args.batch_size,
