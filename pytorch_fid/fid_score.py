@@ -113,7 +113,9 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu'):
 
     pred_arr = np.empty((len(files), dims))
 
-    for start_idx, batch in enumerate(tqdm(dl)):
+    start_idx = 0
+
+    for batch in tqdm(dl):
         batch = batch.to(device)
 
         with torch.no_grad():
@@ -125,9 +127,10 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu'):
             pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
 
         pred = pred.squeeze().cpu().numpy()
-        start_idx = start_idx * pred.shape[0]
 
         pred_arr[start_idx:start_idx + pred.shape[0]] = pred
+
+        start_idx = start_idx + pred.shape[0]
 
     return pred_arr
 
