@@ -124,7 +124,8 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu'):
         if pred.size(2) != 1 or pred.size(3) != 1:
             pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
 
-        pred = pred.reshape(pred.size(0), -1).cpu().numpy()
+        pred = pred.squeeze().cpu().numpy()
+        start_idx = start_idx * pred.shape[0]
 
         pred_arr[start_idx:start_idx + pred.shape[0]] = pred
 
