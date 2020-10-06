@@ -106,15 +106,12 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu'):
         batch_size = len(files)
 
     ds = ImagesPathDataset(files, transforms=TF.ToTensor())
-    dl = torch.utils.data.DataLoader(
-        ds, batch_size=batch_size, drop_last=True, num_workers=cpu_count())
+    dl = torch.utils.data.DataLoader(ds, batch_size=batch_size,
+                                     drop_last=False, num_workers=cpu_count())
 
     pred_arr = np.empty((len(files), dims))
 
-    for i, batch in enumerate(tqdm(dl)):
-        start = i
-        end = i + batch_size
-
+    for start_idx, batch in enumerate(tqdm(dl)):
         batch = batch.to(device)
 
         with torch.no_grad():
@@ -125,7 +122,9 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu'):
         if pred.size(2) != 1 or pred.size(3) != 1:
             pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
 
-        pred_arr[start:end] = pred.cpu().numpy().reshape(pred.size(0), -1)
+        pred = pred.reshape(pred.size(0), -1).cpu().numpy()
+
+        pred_arr[start_idx:start_idx + pred.shape[0]] = pred
 
     return pred_arr
 
