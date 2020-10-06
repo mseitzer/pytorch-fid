@@ -34,14 +34,14 @@ limitations under the License.
 import os
 import pathlib
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from multiprocessing import cpu_count
 
 import numpy as np
 import torch
+import torchvision.transforms as TF
 from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
 from PIL import Image
-import torchvision.transforms as TF
-from multiprocessing import cpu_count
 
 try:
     from tqdm import tqdm
@@ -61,6 +61,7 @@ parser.add_argument('--dims', type=int, default=2048,
 parser.add_argument('path', type=str, nargs=2,
                     help=('Paths to the generated images or '
                           'to .npz statistic files'))
+
 
 class ImagesPathDataset(torch.utils.data.Dataset):
     def __init__(self, files, transforms=None):
@@ -103,9 +104,10 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu'):
         print(('Warning: batch size is bigger than the data size. '
                'Setting batch size to data size'))
         batch_size = len(files)
-         
+
     ds = ImagesPathDataset(files, transforms=TF.ToTensor())
-    dl = torch.utils.data.DataLoader(ds, batch_size=batch_size, drop_last=True, num_workers=cpu_count())
+    dl = torch.utils.data.DataLoader(
+        ds, batch_size=batch_size, drop_last=True, num_workers=cpu_count())
 
     pred_arr = np.empty((len(files), dims))
 
