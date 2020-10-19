@@ -192,7 +192,8 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
             np.trace(sigma2) - 2 * tr_covmean)
 
 
-def calculate_activation_statistics(files, model, batch_size=50, dims=2048, device='cpu'):
+def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
+                                    device='cpu'):
     """Calculation of the statistics used by the FID.
     Params:
     -- files       : List of image files paths
