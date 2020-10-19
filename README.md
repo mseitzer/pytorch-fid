@@ -54,7 +54,7 @@ The choices are:
 
 ## Citing
 
-If you use this repository in your research, consider citing the publication using the following Bibtex entry:
+If you use this repository in your research, consider citing it using the following Bibtex entry:
 
 ```
 @misc{Seitzer2020FID,
