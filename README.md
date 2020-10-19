@@ -1,4 +1,4 @@
-# Fréchet Inception Distance (FID score) in PyTorch
+# FID score for PyTorch
 
 This is a port of the official implementation of [Fréchet Inception Distance](https://arxiv.org/abs/1706.08500) to PyTorch. 
 See [https://github.com/bioinf-jku/TTUR](https://github.com/bioinf-jku/TTUR) for the original implementation using Tensorflow.
@@ -13,7 +13,7 @@ The weights and the model are exactly the same as in [the official Tensorflow im
 
 ## Installation
 
-Install from pip:
+Install from [pip](https://pypi.org/project/pytorch-fid/):
 
 ```
 pip install pytorch-fid
@@ -51,6 +51,21 @@ The choices are:
 - 192:  second max pooling featurs
 - 768:  pre-aux classifier features
 - 2048: final average pooling features (this is the default)
+
+## Citing
+
+If you use this repository in your research, consider citing the publication using the following Bibtex entry:
+
+```
+@misc{Seitzer2020FID,
+  author={Maximilian Seitzer},
+  title={{pytorch-fid: FID Score for PyTorch}},
+  month={August},
+  year={2020},
+  note={Version 0.1.1},
+  howpublished={\url{https://github.com/mseitzer/pytorch-fid}},
+}
+```
 
 ## License
 
