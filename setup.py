@@ -18,33 +18,38 @@ def get_version(rel_path):
     raise RuntimeError('Unable to find version string.')
 
 
-setuptools.setup(
-    name='pytorch-fid',
-    version=get_version('src/pytorch_fid/__init__.py'),
-    author='Max Seitzer',
-    author_email='current.address@unknown.invalid',
-    description=('Package for calculating Frechet Inception Distance (FID) '
-                 'using PyTorch'),
-    long_description=read('README.md'),
-    long_description_content_type='text/markdown',
-    url='https://github.com/mseitzer/pytorch-fid',
-    package_dir={'': 'src'},
-    packages=setuptools.find_packages(where='src/'),
-    classifiers=[
-        'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: Apache Software License',
-    ],
-    python_requires='>=3.5',
-    entry_points={
-        'console_scripts': [
-            'pytorch-fid = pytorch_fid.fid_score:main',
+if __name__ == '__main__':
+    setuptools.setup(
+        name='pytorch-fid',
+        version=get_version('src/pytorch_fid/__init__.py'),
+        author='Max Seitzer',
+        author_email='current.address@unknown.invalid',
+        description=('Package for calculating Frechet Inception Distance (FID)'
+                     ' using PyTorch'),
+        long_description=read('README.md'),
+        long_description_content_type='text/markdown',
+        url='https://github.com/mseitzer/pytorch-fid',
+        package_dir={'': 'src'},
+        packages=setuptools.find_packages(where='src/'),
+        classifiers=[
+            'Programming Language :: Python :: 3',
+            'License :: OSI Approved :: Apache Software License',
         ],
-    },
-    install_requires=[
-        'numpy',
-        'pillow',
-        'scipy',
-        'torch',
-        'torchvision'
-    ]
-)
+        python_requires='>=3.5',
+        entry_points={
+            'console_scripts': [
+                'pytorch-fid = pytorch_fid.fid_score:main',
+            ],
+        },
+        install_requires=[
+            'numpy',
+            'pillow',
+            'scipy',
+            'torch',
+            'torchvision'
+        ],
+        extras_require={'dev': ['flake8',
+                                'flake8-bugbear',
+                                'flake8-isort',
+                                'nox']},
+    )
