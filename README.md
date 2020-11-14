@@ -15,6 +15,7 @@ Requirements:
 - numpy
 - scipy
 - scikit-learn
+- Pillow
 
 To compute the FID or KID score between two datasets with features extracted from inception net:
 
