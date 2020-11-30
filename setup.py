@@ -45,8 +45,8 @@ if __name__ == '__main__':
             'numpy',
             'pillow',
             'scipy',
-            'torch',
-            'torchvision'
+            'torch>=1.0.1',
+            'torchvision>=0.2.2'
         ],
         extras_require={'dev': ['flake8',
                                 'flake8-bugbear',
