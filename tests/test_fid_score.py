@@ -39,3 +39,20 @@ def test_calculate_fid_given_statistics(mocker, tmp_path, device):
                                                     dims=dim)
 
     assert fid_value == np.sum((m1 - m2)**2)
+
+
+def test_image_types(tmp_path):
+    from PIL import Image
+
+    in_arr = np.ones((24, 24, 3), dtype=np.uint8) * 255
+    in_image = Image.fromarray(in_arr, mode='RGB')
+
+    paths = []
+    for ext in fid_score.IMAGE_EXTENSIONS:
+        paths.append(str(tmp_path / 'img.{}'.format(ext)))
+        in_image.save(paths[-1])
+
+    dataset = fid_score.ImagePathDataset(paths)
+
+    for img in dataset:
+        assert np.allclose(np.array(img), in_arr)
