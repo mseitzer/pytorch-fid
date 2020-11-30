@@ -33,21 +33,22 @@ limitations under the License.
 """
 import os
 import pathlib
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from multiprocessing import cpu_count
 
 import numpy as np
 import torch
 import torchvision.transforms as TF
+from PIL import Image
 from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
-from PIL import Image
 
 try:
     from tqdm import tqdm
 except ImportError:
-    # If not tqdm is not available, provide a mock version of it
-    def tqdm(x): return x
+    # If tqdm is not available, provide a mock version of it
+    def tqdm(x):
+        return x
 
 from pytorch_fid.inception import InceptionV3
 
@@ -188,11 +189,12 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
     tr_covmean = np.trace(covmean)
 
-    return (diff.dot(diff) + np.trace(sigma1) +
-            np.trace(sigma2) - 2 * tr_covmean)
+    return (diff.dot(diff) + np.trace(sigma1)
+            + np.trace(sigma2) - 2 * tr_covmean)
 
 
-def calculate_activation_statistics(files, model, batch_size=50, dims=2048, device='cpu'):
+def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
+                                    device='cpu'):
     """Calculation of the statistics used by the FID.
     Params:
     -- files       : List of image files paths
