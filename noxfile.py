@@ -11,3 +11,11 @@ def lint(session):
 
     args = session.posargs or LOCATIONS
     session.run('flake8', *args)
+
+
+@nox.session
+def tests(session):
+    session.install('.')
+    session.install('pytest')
+    session.install('pytest-mock')
+    session.run('pytest', *session.posargs)
