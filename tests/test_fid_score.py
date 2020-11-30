@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
 import torch
+from PIL import Image
 
-from pytorch_fid import fid_score
+from pytorch_fid import fid_score, inception
 
 
 @pytest.fixture
@@ -21,9 +22,9 @@ def test_calculate_fid_given_statistics(mocker, tmp_path, device):
         elif path.endswith('2'):
             return m2, sigma
         else:
-            raise ValueError()
+            raise ValueError
 
-    mocker.patch('pytorch_fid.fid_score._compute_statistics_of_path',
+    mocker.patch('pytorch_fid.fid_score.compute_statistics_of_path',
                  side_effect=dummy_statistics)
 
     dir_names = ['1', '2']
@@ -38,12 +39,52 @@ def test_calculate_fid_given_statistics(mocker, tmp_path, device):
                                                     device=device,
                                                     dims=dim)
 
+    # Given equal covariance, FID is just the squared norm of difference
     assert fid_value == np.sum((m1 - m2)**2)
 
 
-def test_image_types(tmp_path):
-    from PIL import Image
+def test_compute_statistics_of_path(mocker, tmp_path, device):
+    model = mocker.MagicMock(inception.InceptionV3)()
+    model.side_effect = lambda inp: [inp.mean(dim=(2, 3), keepdim=True)]
 
+    size = (4, 4, 3)
+    arrays = [np.zeros(size), np.ones(size) * 0.5, np.ones(size)]
+    images = [(arr * 255).astype(np.uint8) for arr in arrays]
+
+    paths = []
+    for idx, image in enumerate(images):
+        paths.append(str(tmp_path / '{}.png'.format(idx)))
+        Image.fromarray(image, mode='RGB').save(paths[-1])
+
+    stats = fid_score.compute_statistics_of_path(str(tmp_path), model,
+                                                 batch_size=len(images),
+                                                 dims=3,
+                                                 device=device)
+
+    assert np.allclose(stats[0], np.ones((3,)) * 0.5, atol=1e-3)
+    assert np.allclose(stats[1], np.ones((3, 3)) * 0.25)
+
+
+def test_compute_statistics_of_path_from_file(mocker, tmp_path, device):
+    model = mocker.MagicMock(inception.InceptionV3)()
+
+    mu = np.random.randn(5)
+    sigma = np.random.randn(5, 5)
+
+    path = tmp_path / 'stats.npz'
+    with path.open('wb') as f:
+        np.savez(f, mu=mu, sigma=sigma)
+
+    stats = fid_score.compute_statistics_of_path(str(path), model,
+                                                 batch_size=1,
+                                                 dims=5,
+                                                 device=device)
+
+    assert np.allclose(stats[0], mu)
+    assert np.allclose(stats[1], sigma)
+
+
+def test_image_types(tmp_path):
     in_arr = np.ones((24, 24, 3), dtype=np.uint8) * 255
     in_image = Image.fromarray(in_arr, mode='RGB')
 

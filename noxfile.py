@@ -1,6 +1,6 @@
 import nox
 
-LOCATIONS = ('src/', 'noxfile.py', 'setup.py')
+LOCATIONS = ('src/', 'tests/', 'noxfile.py', 'setup.py')
 
 
 @nox.session
