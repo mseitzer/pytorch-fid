@@ -65,8 +65,11 @@ parser.add_argument('path', type=str, nargs=2,
                     help=('Paths to the generated images or '
                           'to .npz statistic files'))
 
+IMAGE_EXTENSIONS = {'bmp', 'jpg', 'jpeg', 'pgm', 'png', 'ppm',
+                    'tif', 'tiff', 'webp'}
 
-class ImagesPathDataset(torch.utils.data.Dataset):
+
+class ImagePathDataset(torch.utils.data.Dataset):
     def __init__(self, files, transforms=None):
         self.files = files
         self.transforms = transforms
@@ -108,7 +111,7 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu'):
                'Setting batch size to data size'))
         batch_size = len(files)
 
-    ds = ImagesPathDataset(files, transforms=TF.ToTensor())
+    ds = ImagePathDataset(files, transforms=TF.ToTensor())
     dl = torch.utils.data.DataLoader(ds, batch_size=batch_size,
                                      drop_last=False, num_workers=cpu_count())
 
@@ -224,7 +227,8 @@ def _compute_statistics_of_path(path, model, batch_size, dims, device):
         f.close()
     else:
         path = pathlib.Path(path)
-        files = list(path.glob('*.jpg')) + list(path.glob('*.png'))
+        files = [file for ext in IMAGE_EXTENSIONS
+                 for file in path.glob('*.{}'.format(ext))]
         m, s = calculate_activation_statistics(files, model, batch_size,
                                                dims, device)
 
