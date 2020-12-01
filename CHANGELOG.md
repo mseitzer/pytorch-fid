@@ -11,9 +11,9 @@
 
 ## [0.1.1] - 2020-08-16
 
-### Added
+### Fixed
 
-* Add pypi shield linking to pypi package to README.md.
+* Fixed software license string in `setup.py`
 
 ## [0.1.0] - 2020-08-16
 
