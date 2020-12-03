@@ -31,7 +31,7 @@ if __name__ == '__main__':
         long_description_content_type='text/markdown',
         url='https://github.com/mseitzer/pytorch-fid',
         package_dir={'': 'src'},
-        packages=setuptools.find_packages(where='src/'),
+        packages=setuptools.find_packages(where='src'),
         classifiers=[
             'Programming Language :: Python :: 3',
             'License :: OSI Approved :: Apache Software License',
