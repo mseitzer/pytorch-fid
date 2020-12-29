@@ -47,7 +47,7 @@ from torchvision import transforms
 try:
     from tqdm import tqdm
 except ImportError:
-    # If not tqdm is not available, provide a mock version of it
+    # If tqdm is not available, provide a mock version of it
     def tqdm(x):
         return x
 
