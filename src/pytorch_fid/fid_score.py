@@ -39,16 +39,13 @@ from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
 
 from PIL import Image
-from pathlib import Path
-from torch.utils import data
-from torch.utils.data import DataLoader
-from torchvision.transforms import transforms
 
 try:
     from tqdm import tqdm
 except ImportError:
     # If not tqdm is not available, provide a mock version of it
-    def tqdm(x): return x
+    def tqdm(x):
+        return x
 
 from pytorch_fid.inception import InceptionV3
 
@@ -184,8 +181,26 @@ class FrechetInceptionDistance:
 
         tr_covmean = np.trace(covmean)
 
-        return (diff.dot(diff) + np.trace(sigma1) +
-                np.trace(sigma2) - 2 * tr_covmean)
+        return (diff.dot(diff) + np.trace(sigma1)
+                + np.trace(sigma2) - 2 * tr_covmean)
+
+    def get_batches_from_image_folder(self, path):
+        transformations = [
+            transforms.Resize((299, 299)),
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0) == 1 else x)
+        ]
+
+        images = FlatImageFolder(path, transform=transforms.Compose(transformations))
+        batches = DataLoader(
+            images,
+            batch_size=self.batch_size,
+            shuffle=False,
+            drop_last=False,
+            num_workers=self.num_workers,
+        )
+
+        return batches
 
     def get_statistics_for_images(self, path, cache=True):
         path = Path(path)
@@ -196,18 +211,11 @@ class FrechetInceptionDistance:
             cached = path / f'inception_statistics_{self.dims}.npz'
 
         if cached.is_file() and cache:
-            f = np.load(cached)
-            m, s = f['mu'][:], f['sigma'][:]
-            return m, s
+            with np.load(cached) as fp:
+                m, s = fp['mu'][:], fp['sigma'][:]
+                return m, s
 
-        transformations = [
-            transforms.Resize((299, 299)),
-            transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0) == 1 else x)
-        ]
-
-        images = FlatImageFolder(path, transform=transforms.Compose(transformations))
-        batches = DataLoader(images, batch_size=self.batch_size, num_workers=self.num_workers)
+        batches = self.get_batches_from_image_folder(path)
 
         activations = self.get_activations(batches)
         m, s = self.calculate_activation_statistics(activations)
@@ -244,6 +252,11 @@ def main():
                              'folders.')
     parser.add_argument('--num-workers', type=int, default=4)
     args = parser.parse_args()
+
+    if args.device is None:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    else:
+        device = torch.device(args.device)
 
     model = FrechetInceptionDistance.get_inception_model(args.dims).to(args.device)
     fid = FrechetInceptionDistance(model, args.dims, args.batch_size, args.num_workers, progressbar=True)

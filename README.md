@@ -1,4 +1,6 @@
-# Fréchet Inception Distance (FID score) in PyTorch
+[![PyPI](https://img.shields.io/pypi/v/pytorch-fid.svg)](https://pypi.org/project/pytorch-fid/)
+
+# FID score for PyTorch
 
 This is a port of the official implementation of [Fréchet Inception Distance](https://arxiv.org/abs/1706.08500) to PyTorch. 
 See [https://github.com/bioinf-jku/TTUR](https://github.com/bioinf-jku/TTUR) for the original implementation using Tensorflow.
@@ -9,12 +11,15 @@ FID is calculated by computing the [Fréchet distance](https://en.wikipedia.org/
 
 Further insights and an independent evaluation of the FID score can be found in [Are GANs Created Equal? A Large-Scale Study](https://arxiv.org/abs/1711.10337).
 
-**Note that the official implementation gives slightly different scores.** If you report FID scores in your paper, and you want them to be exactly comparable to FID scores reported in other papers, you should use [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR).
-You can still use this version if you want a quick FID estimate without installing Tensorflow.
+The weights and the model are exactly the same as in [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR), and were tested to give very similar results (e.g. `.08` absolute error and `0.0009` relative error on LSUN, using ProGAN generated images). However, due to differences in the image interpolation implementation and library backends, FID results still differ slightly from the original implementation. So if you report FID scores in your paper, and you want them to be *exactly comparable* to FID scores reported in other papers, you should consider using [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR).
 
-**Update:** The weights and the model are now exactly the same as in the official Tensorflow implementation, and I verified them to give the same results (around `1e-8` mean absolute error) on single inputs on my platform. However, due to differences in the image interpolation implementation and library backends, FID results might still differ slightly from the original implementation. A test I ran (details are to come) resulted in `.08` absolute error and `0.0009` relative error. 
+## Installation
 
-## Usage
+Install from [pip](https://pypi.org/project/pytorch-fid/):
+
+```
+pip install pytorch-fid
+```
 
 Requirements:
 - python3
@@ -23,6 +28,8 @@ Requirements:
 - pillow
 - numpy
 - scipy
+
+## Usage
 
 To compute the FID score between two datasets, where images of each dataset are contained in an individual folder:
 ```
@@ -43,9 +50,24 @@ The resulting scores might also no longer correlate with visual quality.
 You can select the dimensionality of features to use with the flag `--dims N`, where N is the dimensionality of features. 
 The choices are:
 - 64:   first max pooling features
-- 192:  second max pooling featurs
+- 192:  second max pooling features
 - 768:  pre-aux classifier features
 - 2048: final average pooling features (this is the default)
+
+## Citing
+
+If you use this repository in your research, consider citing it using the following Bibtex entry:
+
+```
+@misc{Seitzer2020FID,
+  author={Maximilian Seitzer},
+  title={{pytorch-fid: FID Score for PyTorch}},
+  month={August},
+  year={2020},
+  note={Version 0.1.1},
+  howpublished={\url{https://github.com/mseitzer/pytorch-fid}},
+}
+```
 
 ## License
 
