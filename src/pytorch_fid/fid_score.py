@@ -32,13 +32,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import PIL
+import torch
 import numpy as np
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy import linalg
-from torch.nn.functional import adaptive_avg_pool2d
-
+from pathlib import Path
 from PIL import Image
+from torch.nn.functional import adaptive_avg_pool2d
+from torch.utils import data
+from torch.utils.data import DataLoader
+from torchvision import transforms
 
 try:
     from tqdm import tqdm
