@@ -32,6 +32,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from multiprocessing import cpu_count
 from pathlib import Path
 
 import numpy as np
@@ -80,12 +81,12 @@ class FrechetInceptionDistance:
                  model,
                  dims=2048,
                  batch_size=32,
-                 num_workers=0,
+                 num_workers=None,
                  progressbar=False):
         self.model = model
         self.dims = dims
         self.batch_size = batch_size
-        self.num_workers = num_workers
+        self.num_workers = cpu_count() if num_workers is None else num_workers
         self.progressbar = progressbar
 
     @staticmethod
