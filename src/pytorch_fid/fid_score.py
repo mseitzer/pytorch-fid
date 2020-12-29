@@ -86,6 +86,16 @@ class FrechetInceptionDistance:
         return InceptionV3([block_idx])
 
     def get_activations(self, batches):
+        """
+        Calculates the activations of the pool_3 layer for all images.
+
+        Args:
+            batches: Iterator returning image batches in pytorch tensor format.
+
+        Returns:
+            A numpy array of dimension (num images, dims) containing feature activations for given images.
+        """
+
         self.model.eval()
 
         device = next(self.model.parameters()).device
@@ -111,21 +121,14 @@ class FrechetInceptionDistance:
 
     @staticmethod
     def calculate_activation_statistics(activations):
-        """Calculation of the statistics used by the FID.
-        Params:
-        -- files       : List of image files paths
-        -- model       : Instance of inception model
-        -- batch_size  : The images numpy array is split into batches with
-                         batch size batch_size. A reasonable batch size
-                         depends on the hardware.
-        -- dims        : Dimensionality of features returned by Inception
-        -- cuda        : If set to True, use GPU
+        """
+        Calculates statistics used for FID by given feature activations.
+
+        Args:
+            activations: Numpy array of dimension (num images, dims) containing feature activations.
 
         Returns:
-        -- mu    : The mean over samples of the activations of the pool_3 layer of
-                   the inception model.
-        -- sigma : The covariance matrix of the activations of the pool_3 layer of
-                   the inception model.
+            Mean and covariance matrix over the given activations.
         """
         mu = np.mean(activations, axis=0)
         sigma = np.cov(activations, rowvar=False)
@@ -133,25 +136,22 @@ class FrechetInceptionDistance:
 
     @staticmethod
     def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
-        """Numpy implementation of the Frechet Distance.
+        """
+        Numpy implementation of the Frechet Distance.
         The Frechet distance between two multivariate Gaussians X_1 ~ N(mu_1, C_1)
         and X_2 ~ N(mu_2, C_2) is
                 d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2)).
 
         Stable version by Dougal J. Sutherland.
 
-        Params:
-        -- mu1   : Numpy array containing the activations of a layer of the
-                   inception net (like returned by the function 'get_predictions')
-                   for generated samples.
-        -- mu2   : The sample mean over activations, precalculated on an
-                   representative data set.
-        -- sigma1: The covariance matrix over activations for generated samples.
-        -- sigma2: The covariance matrix over activations, precalculated on an
-                   representative data set.
+        Args:
+            mu1: Mean over first set of activations.
+            sigma1: Covariance matrix over first set of activations.
+            mu1: Mean over second set of activations.
+            sigma1: Covariance matrix over second set of activations.
 
         Returns:
-        --   : The Frechet Distance.
+            The Frechet Inception Distance.
         """
 
         mu1 = np.atleast_1d(mu1)
@@ -262,9 +262,9 @@ def main():
     else:
         device = torch.device(args.device)
 
-    model = FrechetInceptionDistance.get_inception_model(args.dims).to(args.device)
+    model = FrechetInceptionDistance.get_inception_model(args.dims).to(device)
     fid = FrechetInceptionDistance(model, args.dims, args.batch_size, args.num_workers, progressbar=True)
-    fid_score = fid.calculate_fid_for_image_directories(args.path[0], args.path[1])
+    fid_score = fid.calculate_fid_for_image_directories(args.path[0], args.path[1], cache=args.cache)
 
     print('FID:', fid_score)
 
