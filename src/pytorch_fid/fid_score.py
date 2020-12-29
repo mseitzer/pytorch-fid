@@ -66,7 +66,7 @@ class ImagePathDataset(data.Dataset):
         self.transform = transform
 
     def __len__(self):
-        return min(len(self.files), 1000)
+        return len(self.files)
 
     def __getitem__(self, idx):
         filename = self.files[idx]
