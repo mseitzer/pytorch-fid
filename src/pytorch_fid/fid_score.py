@@ -31,14 +31,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import PIL
-import torch
-import numpy as np
-
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from scipy import linalg
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
+
+import numpy as np
+import torch
 from PIL import Image
+from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
 from torch.utils import data
 from torch.utils.data import DataLoader
@@ -53,12 +52,16 @@ except ImportError:
 
 from pytorch_fid.inception import InceptionV3
 
+IMAGE_EXTENSIONS = (
+    'bmp', 'jpg', 'jpeg', 'pgm', 'png', 'ppm', 'tif', 'tiff', 'webp'
+)
 
-class FlatImageFolder(data.Dataset):
-    def __init__(self, root, transform=None, ext=('.png', '.jpg', '.jpeg', 'bmp')):
+
+class ImagePathDataset(data.Dataset):
+    def __init__(self, root, transform=None, ext=IMAGE_EXTENSIONS):
         super().__init__()
-
-        self.files = [f for f in Path(root).iterdir() if f.is_file() and f.suffix.lower() in ext]
+        self.files = [f for f in Path(root).iterdir()
+                      if f.is_file() and f.suffix.lower()[1:] in ext]
         self.transform = transform
 
     def __len__(self):
@@ -66,14 +69,19 @@ class FlatImageFolder(data.Dataset):
 
     def __getitem__(self, idx):
         filename = self.files[idx]
-        X = PIL.Image.open(filename)
+        img = Image.open(filename).convert('RGB')
         if self.transform:
-            X = self.transform(X)
-        return X
+            img = self.transform(img)
+        return img
 
 
 class FrechetInceptionDistance:
-    def __init__(self, model, dims=2048, batch_size=32, num_workers=0, progressbar=False):
+    def __init__(self,
+                 model,
+                 dims=2048,
+                 batch_size=32,
+                 num_workers=0,
+                 progressbar=False):
         self.model = model
         self.dims = dims
         self.batch_size = batch_size
@@ -85,6 +93,9 @@ class FrechetInceptionDistance:
         block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
         return InceptionV3([block_idx])
 
+    def _get_device(self):
+        return next(self.model.parameters()).device
+
     def get_activations(self, batches):
         """
         Calculates the activations of the pool_3 layer for all images.
@@ -93,29 +104,33 @@ class FrechetInceptionDistance:
             batches: Iterator returning image batches in pytorch tensor format.
 
         Returns:
-            A numpy array of dimension (num images, dims) containing feature activations for given images.
+            A numpy array of dimension (num images, dims) containing
+            feature activations for given images.
         """
 
         self.model.eval()
 
-        device = next(self.model.parameters()).device
+        device = self._get_device()
 
         activations = []
 
         if self.progressbar:
             batches = tqdm(batches)
 
-        for i, batch in enumerate(batches):
+        for batch in batches:
             batch = batch.to(device)
 
             pred = self.model(batch)[0]
 
-            # If model output is not scalar, apply global spatial average pooling.
+            # If model output is not scalar, apply global spatial average
+            # pooling.
             # This happens if you choose a dimensionality not equal 2048.
             if pred.size(2) != 1 or pred.size(3) != 1:
                 pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
 
-            activations.append(pred.cpu().data.numpy().reshape(pred.size(0), -1))
+            activations.append(
+                pred.cpu().data.numpy().reshape(pred.size(0), -1)
+            )
 
         return np.concatenate(activations)
 
@@ -125,7 +140,8 @@ class FrechetInceptionDistance:
         Calculates statistics used for FID by given feature activations.
 
         Args:
-            activations: Numpy array of dimension (num images, dims) containing feature activations.
+            activations: Numpy array of dimension (num images, dims)
+            containing feature activations.
 
         Returns:
             Mean and covariance matrix over the given activations.
@@ -134,12 +150,17 @@ class FrechetInceptionDistance:
         sigma = np.cov(activations, rowvar=False)
         return mu, sigma
 
+    def get_activation_statistics(self, batches):
+        activations = self.get_activations(batches)
+        mu, sigma = self.calculate_activation_statistics(activations)
+        return mu, sigma
+
     @staticmethod
     def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
         """
         Numpy implementation of the Frechet Distance.
-        The Frechet distance between two multivariate Gaussians X_1 ~ N(mu_1, C_1)
-        and X_2 ~ N(mu_2, C_2) is
+        The Frechet distance between two multivariate
+        Gaussians X_1 ~ N(mu_1, C_1) and X_2 ~ N(mu_2, C_2) is
                 d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2)).
 
         Stable version by Dougal J. Sutherland.
@@ -191,11 +212,16 @@ class FrechetInceptionDistance:
     def get_batches_from_image_folder(self, path):
         transformations = [
             transforms.Resize((299, 299)),
-            transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0) == 1 else x)
+            transforms.ToTensor()
         ]
 
-        images = FlatImageFolder(path, transform=transforms.Compose(transformations))
+        images = ImagePathDataset(
+            path, transform=transforms.Compose(transformations)
+        )
+
+        if not len(images):
+            raise AssertionError(f'No images found in path {path}')
+
         batches = DataLoader(
             images,
             batch_size=self.batch_size,
@@ -206,7 +232,7 @@ class FrechetInceptionDistance:
 
         return batches
 
-    def get_statistics_for_images(self, path, cache=True):
+    def get_statistics_for_path(self, path, cache=True):
         path = Path(path)
         if path.is_file() and path.suffix in ['.np', '.npz']:
             cached = path
@@ -229,9 +255,9 @@ class FrechetInceptionDistance:
 
         return m, s
 
-    def calculate_fid_for_image_directories(self, path1, path2, cache=True):
-        m1, s1 = self.get_statistics_for_images(path1, cache=cache)
-        m2, s2 = self.get_statistics_for_images(path2, cache=cache)
+    def calculate_fid_given_paths(self, path1, path2, cache=True):
+        m1, s1 = self.get_statistics_for_path(path1, cache=cache)
+        m2, s2 = self.get_statistics_for_path(path2, cache=cache)
 
         fid_score = self.calculate_frechet_distance(m1, s1, m2, s2)
 
@@ -252,8 +278,8 @@ def main():
                         help=('Paths to the generated images or '
                               'to .npz statistic files'))
     parser.add_argument('--cache', action='store_true',
-                        help='Whether to look for cached statistics or cache computed statistics in the given image '
-                             'folders.')
+                        help='Whether to look for cached statistics or cache '
+                             'computed statistics in the given image folders.')
     parser.add_argument('--num-workers', type=int, default=4)
     args = parser.parse_args()
 
@@ -263,8 +289,12 @@ def main():
         device = torch.device(args.device)
 
     model = FrechetInceptionDistance.get_inception_model(args.dims).to(device)
-    fid = FrechetInceptionDistance(model, args.dims, args.batch_size, args.num_workers, progressbar=True)
-    fid_score = fid.calculate_fid_for_image_directories(args.path[0], args.path[1], cache=args.cache)
+    fid = FrechetInceptionDistance(
+        model, args.dims, args.batch_size, args.num_workers, progressbar=True
+    )
+    fid_score = fid.calculate_fid_given_paths(
+        args.path[0], args.path[1], cache=args.cache
+    )
 
     print('FID:', fid_score)
 
