@@ -100,7 +100,7 @@ def extract_lenet_features(imgs, net):
     if imgs[0].min() < -0.001:
       imgs = (imgs + 1)/2.0
     print(imgs.shape, imgs.min(), imgs.max())
-    imgs = torch.from_numpy(imgs).cuda()
+    imgs = torch.from_numpy(imgs)
     for i, images in enumerate(imgs):
         feats.append(net.extract_features(images).detach().cpu().numpy())
     feats = np.vstack(feats)

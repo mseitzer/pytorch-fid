@@ -22,10 +22,10 @@ class LeNet5(nn.Module):
         self.convnet = nn.Sequential(OrderedDict([
             ('c1', nn.Conv2d(1, 6, kernel_size=(5, 5))),
             ('tanh1', nn.Tanh()),
-            ('s2', nn.MaxPool2d(kernel_size=(2, 2), stride=2)),
+            ('s2', nn.MaxPool2d(kernel_size=(2, 2), stride=2, padding=1)),
             ('c3', nn.Conv2d(6, 16, kernel_size=(5, 5))),
             ('tanh3', nn.Tanh()),
-            ('s4', nn.MaxPool2d(kernel_size=(2, 2), stride=2)),
+            ('s4', nn.MaxPool2d(kernel_size=(2, 2), stride=2, padding=1)),
             ('c5', nn.Conv2d(16, 120, kernel_size=(5, 5))),
             ('tanh5', nn.Tanh())
         ]))
@@ -44,7 +44,7 @@ class LeNet5(nn.Module):
         return output
 
     def extract_features(self, img):
-        output = self.convnet(img)
+        output = self.convnet(img.float())
         output = output.view(img.size(0), -1)
         output = self.fc[1](self.fc[0](output))
         return output

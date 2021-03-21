@@ -203,14 +203,17 @@ def calculate_activation_statistics(act):
     return mu, sigma
 
 
-def extract_lenet_features(imgs, net):
+def extract_lenet_features(imgs, net, cuda):
     net.eval()
     feats = []
     imgs = imgs.reshape([-1, 100] + list(imgs.shape[1:]))
     if imgs[0].min() < -0.001:
       imgs = (imgs + 1)/2.0
     print(imgs.shape, imgs.min(), imgs.max())
-    imgs = torch.from_numpy(imgs).cuda()
+    if cuda:
+        imgs = torch.from_numpy(imgs).cuda()
+    else:
+        imgs = torch.from_numpy(imgs)
     for i, images in enumerate(imgs):
         feats.append(net.extract_features(images).detach().cpu().numpy())
     feats = np.vstack(feats)
@@ -230,7 +233,7 @@ def _compute_activations(path, model, batch_size, dims, cuda, model_type):
     if model_type == 'inception':
         act = get_activations(path, model, batch_size, dims, cuda)
     elif model_type == 'lenet':
-        act = extract_lenet_features(path, model)
+        act = extract_lenet_features(path, model, cuda)
 
     return act
 
