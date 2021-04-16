@@ -271,7 +271,7 @@ def main():
     fid_value = calculate_fid_given_paths(args.path,
                                           args.batch_size,
                                           device,
-                                          args.dims
+                                          args.dims,
                                           args.num_workers)
     print('FID: ', fid_value)
 
