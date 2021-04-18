@@ -56,7 +56,7 @@ parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('--batch-size', type=int, default=50,
                     help='Batch size to use')
 parser.add_argument('--num-workers', type=int, default=8,
-                    help='Batch size to use')
+                    help='Number of processes to use for data loading')
 parser.add_argument('--device', type=str, default=None,
                     help='Device to use. Like cuda, cuda:0 or cpu')
 parser.add_argument('--dims', type=int, default=2048,
@@ -227,7 +227,7 @@ def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
     return mu, sigma
 
 
-def compute_statistics_of_path(path, model, batch_size, dims, device, num_workers):
+def compute_statistics_of_path(path, model, batch_size, dims, device, num_workers=8):
     if path.endswith('.npz'):
         with np.load(path) as f:
             m, s = f['mu'][:], f['sigma'][:]
@@ -241,7 +241,7 @@ def compute_statistics_of_path(path, model, batch_size, dims, device, num_worker
     return m, s
 
 
-def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers):
+def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=8):
     """Calculates the FID of two paths"""
     for p in paths:
         if not os.path.exists(p):
