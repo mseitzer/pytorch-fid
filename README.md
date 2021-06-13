@@ -36,7 +36,7 @@ To compute the FID score between two datasets, where images of each dataset are 
 python -m pytorch_fid path/to/dataset1 path/to/dataset2
 ```
 
-To run the evaluation on GPU, use the flag `--gpu N`, where `N` is the index of the GPU to use. 
+To run the evaluation on GPU, use the flag `--device cuda:N`, where `N` is the index of the GPU to use. 
 
 ### Using different layers for feature maps
 
