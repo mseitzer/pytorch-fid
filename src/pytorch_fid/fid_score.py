@@ -34,7 +34,6 @@ limitations under the License.
 import os
 import pathlib
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-from multiprocessing import cpu_count
 
 import numpy as np
 import torch
@@ -87,7 +86,8 @@ class ImagePathDataset(torch.utils.data.Dataset):
         return img
 
 
-def get_activations(files, model, batch_size=50, dims=2048, device='cpu', num_workers=8):
+def get_activations(files, model, batch_size=50, dims=2048, device='cpu',
+                    num_workers=8):
     """Calculates the activations of the pool_3 layer for all images.
 
     Params:
@@ -227,7 +227,8 @@ def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
     return mu, sigma
 
 
-def compute_statistics_of_path(path, model, batch_size, dims, device, num_workers=8):
+def compute_statistics_of_path(path, model, batch_size, dims, device,
+                               num_workers=8):
     if path.endswith('.npz'):
         with np.load(path) as f:
             m, s = f['mu'][:], f['sigma'][:]
