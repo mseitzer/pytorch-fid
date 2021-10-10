@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.1] - 2021-10-10
+
+### Added
+
+* Add argument `--num-workers` to select number of dataloader processes ([#66](https://github.com/mseitzer/pytorch-fid/pull/66)). Defaults to 8 or the number of available CPUs if less than 8 CPUs are available.
+
+### Fixed
+
+* Fixed package setup to work under Windows ([#55](https://github.com/mseitzer/pytorch-fid/pull/55), [#72](https://github.com/mseitzer/pytorch-fid/issues/72))
+
 ## [0.2.0] - 2020-11-30
 
 ### Added
