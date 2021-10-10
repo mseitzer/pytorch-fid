@@ -54,8 +54,9 @@ from pytorch_fid.inception import InceptionV3
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('--batch-size', type=int, default=50,
                     help='Batch size to use')
-parser.add_argument('--num-workers', type=int, default=8,
-                    help='Number of processes to use for data loading')
+parser.add_argument('--num-workers', type=int,
+                    help=('Number of processes to use for data loading. '
+                          'Defaults to `min(8, num_cpus)`'))
 parser.add_argument('--device', type=str, default=None,
                     help='Device to use. Like cuda, cuda:0 or cpu')
 parser.add_argument('--dims', type=int, default=2048,
@@ -87,7 +88,7 @@ class ImagePathDataset(torch.utils.data.Dataset):
 
 
 def get_activations(files, model, batch_size=50, dims=2048, device='cpu',
-                    num_workers=8):
+                    num_workers=1):
     """Calculates the activations of the pool_3 layer for all images.
 
     Params:
@@ -203,7 +204,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
 
 def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
-                                    device='cpu', num_workers=8):
+                                    device='cpu', num_workers=1):
     """Calculation of the statistics used by the FID.
     Params:
     -- files       : List of image files paths
@@ -228,7 +229,7 @@ def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
 
 
 def compute_statistics_of_path(path, model, batch_size, dims, device,
-                               num_workers=8):
+                               num_workers=1):
     if path.endswith('.npz'):
         with np.load(path) as f:
             m, s = f['mu'][:], f['sigma'][:]
@@ -242,7 +243,7 @@ def compute_statistics_of_path(path, model, batch_size, dims, device,
     return m, s
 
 
-def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=8):
+def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
     """Calculates the FID of two paths"""
     for p in paths:
         if not os.path.exists(p):
@@ -269,11 +270,17 @@ def main():
     else:
         device = torch.device(args.device)
 
+    if args.num_workers is None:
+        num_avail_cpus = len(os.sched_getaffinity(0))
+        num_workers = min(num_avail_cpus, 8)
+    else:
+        num_workers = args.num_workers
+
     fid_value = calculate_fid_given_paths(args.path,
                                           args.batch_size,
                                           device,
                                           args.dims,
-                                          args.num_workers)
+                                          num_workers)
     print('FID: ', fid_value)
 
 
