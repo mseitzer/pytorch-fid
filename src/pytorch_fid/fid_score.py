@@ -63,6 +63,9 @@ parser.add_argument('--dims', type=int, default=2048,
                     choices=list(InceptionV3.BLOCK_INDEX_BY_DIM),
                     help=('Dimensionality of Inception features to use. '
                           'By default, uses pool3 features'))
+parser.add_argument('--save-stats', action='store_true',
+                    help=('Generate an npz archive from a directory of samples. '
+                          'The first path is used as input and the second as output.'))
 parser.add_argument('path', type=str, nargs=2,
                     help=('Paths to the generated images or '
                           'to .npz statistic files'))
@@ -262,6 +265,26 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
     return fid_value
 
 
+def save_fid_stats(paths, batch_size, device, dims, num_workers=1):
+    """Calculates the FID of two paths"""
+    if not os.path.exists(paths[0]):
+        raise RuntimeError('Invalid path: %s' % paths[0])
+
+    if os.path.exists(paths[1]):
+        raise RuntimeError('Existing output file: %s' % paths[1])
+
+    block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
+
+    model = InceptionV3([block_idx]).to(device)
+
+    print(f"Saving statistics for {paths[0]}")
+
+    m1, s1 = compute_statistics_of_path(paths[0], model, batch_size,
+                                        dims, device, num_workers)
+
+    np.savez_compressed(paths[1], mu=m1, sigma=s1)
+
+
 def main():
     args = parser.parse_args()
 
@@ -275,6 +298,10 @@ def main():
         num_workers = min(num_avail_cpus, 8)
     else:
         num_workers = args.num_workers
+
+    if args.save_stats:
+        save_fid_stats(args.path, args.batch_size, device, args.dims, num_workers)
+        return
 
     fid_value = calculate_fid_given_paths(args.path,
                                           args.batch_size,
