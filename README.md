@@ -54,6 +54,15 @@ The choices are:
 - 768:  pre-aux classifier features
 - 2048: final average pooling features (this is the default)
 
+### Compute inception score
+Besides FID, [Inception score](https://arxiv.org/abs/1606.03498) is also a standard measurement for many GANs papers. To compute IS of a dataset:
+
+```
+python -m pytorch_fid path/to/dataset None --inception-score 
+```
+
+However, the IS metric has a lot of weaknesses that are clarified [here](https://arxiv.org/abs/1801.01973).
+
 ## Citing
 
 If you use this repository in your research, consider citing it using the following Bibtex entry:
