@@ -67,6 +67,14 @@ parser.add_argument('path', type=str, nargs=2,
                     help=('Paths to the generated images or '
                           'to .npz statistic files'))
 
+parser.add_argument('--splits', type=int, default=10, 
+                    help=('Splits to compute inception score, only use when "is" is true'))
+
+parser.add_argument('--inception-score', action='store_true',
+                    help=('Compute the inception score.'
+                          'Inception score is computed individually on one dataset so only use the first path as input.'))
+
+
 IMAGE_EXTENSIONS = {'bmp', 'jpg', 'jpeg', 'pgm', 'png', 'ppm',
                     'tif', 'tiff', 'webp'}
 
@@ -261,6 +269,54 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
 
     return fid_value
 
+def calculate_inception_score(path, batch_size, device, num_workers=1, splits=10):
+    '''
+    Here, decide to use the inceptionv3 on Pytorch
+    Code base on: https://github.com/openai/improved-gan/blob/master/inception_score/model.py
+    '''
+    from torchvision.models.inception import inception_v3
+    import torch.nn.functional as F
+
+    model = inception_v3(pretrained=True, transform_input=False)
+    model.to(device)
+    model.eval()
+
+    path = pathlib.Path(path)
+    files = sorted([file for ext in IMAGE_EXTENSIONS
+                    for file in path.glob('*.{}'.format(ext))])
+    dataset = ImagePathDataset(files, transforms=TF.ToTensor())
+    dataloader = torch.utils.data.DataLoader(dataset,
+                                             batch_size=batch_size,
+                                             shuffle=False,
+                                             drop_last=False,
+                                             num_workers=num_workers)
+
+    pred_arr = np.empty((len(files), 1000))
+
+    start_idx = 0
+
+    for batch in tqdm(dataloader):
+        batch = batch.to(device)
+        
+        batch = F.interpolate(batch,
+                            size=(299, 299),
+                            mode='bilinear',
+                            align_corners=False)
+        batch = batch*2 - 1
+
+        with torch.no_grad():
+            pred = F.softmax(model(batch), dim = 1).cpu().numpy()
+
+        pred_arr[start_idx:start_idx + pred.shape[0]] = pred
+        start_idx = start_idx + pred.shape[0]
+
+    scores = []
+    for i in range(splits):
+        part = pred_arr[(i*pred_arr.shape[0]//splits):((i+1)*pred_arr.shape[0]//splits), :]
+        kl = part * (np.log(part) - np.log(np.expand_dims(np.mean(part, 0), 0))) # kl divergence       
+        kl = np.mean(np.sum(kl, 1)) # can be modify with scipy.stats.entropy
+        scores.append(np.exp(kl))
+    return np.mean(scores), np.std(scores)
 
 def main():
     args = parser.parse_args()
@@ -275,6 +331,16 @@ def main():
         num_workers = min(num_avail_cpus, 8)
     else:
         num_workers = args.num_workers
+
+
+    if args.inception_score:
+        m, s = calculate_inception_score(args.path[0],
+                                        args.batch_size,
+                                        device,
+                                        num_workers,
+                                        args.splits)
+        print(f'Inception score: {round(m,4)} +- {round(s,4)}')
+
 
     fid_value = calculate_fid_given_paths(args.path,
                                           args.batch_size,
