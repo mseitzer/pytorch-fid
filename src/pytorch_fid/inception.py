@@ -79,7 +79,7 @@ class InceptionV3(nn.Module):
         if use_fid_inception:
             inception = fid_inception_v3()
         else:
-            inception = _inception_v3(pretrained=True)
+            inception = _inception_v3(weights='DEFAULT')
 
         # Block 0: input to maxpool1
         block0 = [
@@ -192,7 +192,7 @@ def fid_inception_v3():
     """
     inception = _inception_v3(num_classes=1008,
                               aux_logits=False,
-                              pretrained=False)
+                              weights=None)
     inception.Mixed_5b = FIDInceptionA(192, pool_features=32)
     inception.Mixed_5c = FIDInceptionA(256, pool_features=64)
     inception.Mixed_5d = FIDInceptionA(288, pool_features=64)
