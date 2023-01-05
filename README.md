@@ -73,7 +73,7 @@ If you use this repository in your research, consider citing it using the follow
   title={{pytorch-fid: FID Score for PyTorch}},
   month={August},
   year={2020},
-  note={Version 0.2.1},
+  note={Version 0.3.0},
   howpublished={\url{https://github.com/mseitzer/pytorch-fid}},
 }
 ```
