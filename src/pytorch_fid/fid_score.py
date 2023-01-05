@@ -271,8 +271,15 @@ def main():
         device = torch.device(args.device)
 
     if args.num_workers is None:
-        num_avail_cpus = len(os.sched_getaffinity(0))
-        num_workers = min(num_avail_cpus, 8)
+        try:
+            num_cpus = len(os.sched_getaffinity(0))
+        except AttributeError:
+            # os.sched_getaffinity is not available under Windows, use
+            # os.cpu_count instead (which may not return the *available* number
+            # of CPUs).
+            num_cpus = os.cpu_count()
+
+        num_workers = min(num_cpus, 8) if num_cpus is not None else 0
     else:
         num_workers = args.num_workers
 
