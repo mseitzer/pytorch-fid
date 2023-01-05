@@ -24,7 +24,6 @@ if __name__ == '__main__':
         name='pytorch-fid',
         version=get_version(os.path.join('src', 'pytorch_fid', '__init__.py')),
         author='Max Seitzer',
-        author_email='current.address@unknown.invalid',
         description=('Package for calculating Frechet Inception Distance (FID)'
                      ' using PyTorch'),
         long_description=read('README.md'),
