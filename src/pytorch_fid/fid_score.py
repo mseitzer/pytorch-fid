@@ -266,7 +266,7 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
 
 
 def save_fid_stats(paths, batch_size, device, dims, num_workers=1):
-    """Calculates the FID of two paths"""
+    """Saves FID statistics of one path"""
     if not os.path.exists(paths[0]):
         raise RuntimeError('Invalid path: %s' % paths[0])
 
