@@ -8,9 +8,11 @@ def lint(session):
     session.install('flake8')
     session.install('flake8-bugbear')
     session.install('flake8-isort')
+    session.install('black==24.3.0')
 
     args = session.posargs or LOCATIONS
     session.run('flake8', *args)
+    session.run('black', '--check', '--diff', *args)
 
 
 @nox.session(python=["3.8", "3.9", "3.10", "3.11", "3.12"])

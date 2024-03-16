@@ -51,5 +51,6 @@ if __name__ == '__main__':
         extras_require={'dev': ['flake8',
                                 'flake8-bugbear',
                                 'flake8-isort',
+                                'black==24.3.0',
                                 'nox']},
     )
