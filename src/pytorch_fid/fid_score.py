@@ -64,8 +64,9 @@ parser.add_argument('--dims', type=int, default=2048,
                     help=('Dimensionality of Inception features to use. '
                           'By default, uses pool3 features'))
 parser.add_argument('--save-stats', action='store_true',
-                    help=('Generate an npz archive from a directory of samples. '
-                          'The first path is used as input and the second as output.'))
+                    help=('Generate an npz archive from a directory of '
+                          'samples. The first path is used as input and the '
+                          'second as output.'))
 parser.add_argument('path', type=str, nargs=2,
                     help=('Paths to the generated images or '
                           'to .npz statistic files'))
@@ -307,7 +308,11 @@ def main():
         num_workers = args.num_workers
 
     if args.save_stats:
-        save_fid_stats(args.path, args.batch_size, device, args.dims, num_workers)
+        save_fid_stats(args.path,
+                       args.batch_size,
+                       device,
+                       args.dims,
+                       num_workers)
         return
 
     fid_value = calculate_fid_given_paths(args.path,
