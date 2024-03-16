@@ -1,0 +1,41 @@
+name: "Full set of tests for PRs and master branch"
+on: 
+  push:
+    branches:
+      - "master"
+  pull_request:
+
+concurrency: 
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+  
+jobs:
+  tests:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    name: Python ${{ matrix.python-version }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Nox
+      run: pip install nox==2024.03.02
+    - name: Run tests
+      run: nox --non-interactive --error-on-missing-interpreter --session "tests-${{ matrix.python-version }}"
+  
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Install Nox
+        run: pip install nox==2024.03.02
+      - name: Lint
+        run: nox --non-interactive --error-on-missing-interpreter --session "lint"
