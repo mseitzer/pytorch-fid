@@ -11,7 +11,7 @@ FID is calculated by computing the [Fréchet distance](https://en.wikipedia.org/
 
 Further insights and an independent evaluation of the FID score can be found in [Are GANs Created Equal? A Large-Scale Study](https://arxiv.org/abs/1711.10337).
 
-The weights and the model are exactly the same as in [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR), and were tested to give very similar results (e.g. `.08` absolute error and `0.0009` relative error on LSUN, using ProGAN generated images). However, due to differences in the image interpolation implementation and library backends, FID results still differ slightly from the original implementation. So if you report FID scores in your paper, and you want them to be *exactly comparable* to FID scores reported in other papers, you should consider using [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR).
+The weights and the model are exactly the same as in [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR), and were tested to give very similar results (e.g. `.08` absolute error and `0.0009` relative error on LSUN, using ProGAN generated images). However, due to differences in the image interpolation implementation and library backends, FID results still differ slightly from the original implementation. So if you report FID scores in your paper, and you want them to be _exactly comparable_ to FID scores reported in other papers, you should consider using [the official Tensorflow implementation](https://github.com/bioinf-jku/TTUR).
 
 ## Installation
 
@@ -22,6 +22,7 @@ pip install pytorch-fid
 ```
 
 Requirements:
+
 - python3
 - pytorch
 - torchvision
@@ -32,6 +33,7 @@ Requirements:
 ## Usage
 
 To compute the FID score between two datasets, where images of each dataset are contained in an individual folder:
+
 ```
 python -m pytorch_fid path/to/dataset1 path/to/dataset2
 ```
@@ -49,14 +51,17 @@ The resulting scores might also no longer correlate with visual quality.
 
 You can select the dimensionality of features to use with the flag `--dims N`, where N is the dimensionality of features.
 The choices are:
-- 64:   first max pooling features
-- 192:  second max pooling features
-- 768:  pre-aux classifier features
+
+- 64: first max pooling features
+- 192: second max pooling features
+- 768: pre-aux classifier features
 - 2048: final average pooling features (this is the default)
 
 ## Generating a compatible `.npz` archive from a dataset
+
 A frequent use case will be to compare multiple models against an original dataset.
 To save training multiple times on the original dataset, there is also the ability to generate a compatible `.npz` archive from a dataset. This is done using any combination of the previously mentioned arguments with the addition of the `--save-stats` flag. For example:
+
 ```
 python -m pytorch_fid --save-stats path/to/dataset path/to/outputfile
 ```

@@ -136,10 +136,8 @@ def get_activations(
 
     if batch_size > len(files):
         print(
-            (
-                "Warning: batch size is bigger than the data size. "
-                "Setting batch size to data size"
-            )
+            "Warning: batch size is bigger than the data size. "
+            "Setting batch size to data size"
         )
         batch_size = len(files)
 
@@ -228,7 +226,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     if np.iscomplexobj(covmean):
         if not np.allclose(np.diagonal(covmean).imag, 0, atol=1e-3):
             m = np.max(np.abs(covmean.imag))
-            raise ValueError("Imaginary component {}".format(m))
+            raise ValueError(f"Imaginary component {m}")
         covmean = covmean.real
 
     tr_covmean = np.trace(covmean)
@@ -269,7 +267,7 @@ def compute_statistics_of_path(path, model, batch_size, dims, device, num_worker
     else:
         path = pathlib.Path(path)
         files = sorted(
-            [file for ext in IMAGE_EXTENSIONS for file in path.glob("*.{}".format(ext))]
+            [file for ext in IMAGE_EXTENSIONS for file in path.glob(f"*.{ext}")]
         )
         m, s = calculate_activation_statistics(
             files, model, batch_size, dims, device, num_workers

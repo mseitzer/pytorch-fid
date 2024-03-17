@@ -66,7 +66,7 @@ class InceptionV3(nn.Module):
             strongly advised to set this parameter to true to get comparable
             results.
         """
-        super(InceptionV3, self).__init__()
+        super().__init__()
 
         self.resize_input = resize_input
         self.normalize_input = normalize_input
@@ -221,7 +221,7 @@ class FIDInceptionA(torchvision.models.inception.InceptionA):
     """InceptionA block patched for FID computation"""
 
     def __init__(self, in_channels, pool_features):
-        super(FIDInceptionA, self).__init__(in_channels, pool_features)
+        super().__init__(in_channels, pool_features)
 
     def forward(self, x):
         branch1x1 = self.branch1x1(x)
@@ -248,7 +248,7 @@ class FIDInceptionC(torchvision.models.inception.InceptionC):
     """InceptionC block patched for FID computation"""
 
     def __init__(self, in_channels, channels_7x7):
-        super(FIDInceptionC, self).__init__(in_channels, channels_7x7)
+        super().__init__(in_channels, channels_7x7)
 
     def forward(self, x):
         branch1x1 = self.branch1x1(x)
@@ -278,7 +278,7 @@ class FIDInceptionE_1(torchvision.models.inception.InceptionE):
     """First InceptionE block patched for FID computation"""
 
     def __init__(self, in_channels):
-        super(FIDInceptionE_1, self).__init__(in_channels)
+        super().__init__(in_channels)
 
     def forward(self, x):
         branch1x1 = self.branch1x1(x)
@@ -313,7 +313,7 @@ class FIDInceptionE_2(torchvision.models.inception.InceptionE):
     """Second InceptionE block patched for FID computation"""
 
     def __init__(self, in_channels):
-        super(FIDInceptionE_2, self).__init__(in_channels)
+        super().__init__(in_channels)
 
     def forward(self, x):
         branch1x1 = self.branch1x1(x)

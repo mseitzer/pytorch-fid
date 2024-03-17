@@ -53,7 +53,7 @@ def test_compute_statistics_of_path(mocker, tmp_path, device):
 
     paths = []
     for idx, image in enumerate(images):
-        paths.append(str(tmp_path / "{}.png".format(idx)))
+        paths.append(str(tmp_path / f"{idx}.png"))
         Image.fromarray(image, mode="RGB").save(paths[-1])
 
     stats = fid_score.compute_statistics_of_path(
@@ -93,7 +93,7 @@ def test_image_types(tmp_path):
 
     paths = []
     for ext in fid_score.IMAGE_EXTENSIONS:
-        paths.append(str(tmp_path / "img.{}".format(ext)))
+        paths.append(str(tmp_path / f"img.{ext}"))
         in_image.save(paths[-1])
 
     dataset = fid_score.ImagePathDataset(paths)
