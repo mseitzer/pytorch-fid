@@ -1,9 +1,6 @@
 import sys
 from textwrap import dedent
 
-import nox
-
-
 try:
     from nox_poetry import session
 except ImportError:
@@ -15,8 +12,7 @@ except ImportError:
     {sys.executable} -m pip install nox-poetry"""
     raise SystemExit(dedent(message)) from None
 
-
-LOCATIONS = ("src/", "tests/", "noxfile.py", "setup.py")
+LOCATIONS = ("src/", "tests/", "noxfile.py")
 
 
 @session
@@ -33,7 +29,7 @@ def lint(session):
 
 @session(python=["3.8", "3.9", "3.10", "3.11", "3.12"])
 def tests(session):
-    session.install(".", '--extra-index-url', 'https://download.pytorch.org/whl/cpu')
+    session.install(".", "--extra-index-url", "https://download.pytorch.org/whl/cpu")
     session.install("pytest")
     session.install("pytest-mock")
     session.run("pytest", *session.posargs)
