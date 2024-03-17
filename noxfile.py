@@ -26,8 +26,7 @@ def activate_virtualenv_in_precommit_hooks(session: Session) -> None:
     that environment when invoked from git.
 
     This function is copied from cookiecutter-hypermodern-python, see
-    https://github.com/cjolowicz/cookiecutter-hypermodern-python/blob/main/%7B%7Bcookiecutter.
-    project_name%7D%7D/noxfile.py
+    https://github.com/cjolowicz/cookiecutter-hypermodern-python/blob/main/%7B%7Bcookiecutter.project_name%7D%7D/noxfile.py
 
     Args:
         session: The Session object.
