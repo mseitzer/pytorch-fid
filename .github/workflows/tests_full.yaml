@@ -1,14 +1,14 @@
 name: "Full set of tests for PRs and master branch"
-on: 
+on:
   push:
     branches:
       - "master"
   pull_request:
 
-concurrency: 
+concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
-  
+
 jobs:
   tests:
     runs-on: ubuntu-22.04
@@ -17,22 +17,22 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     name: Python ${{ matrix.python-version }}
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Poetry
-      run: |
-        pip install poetry==1.8.2
-        pip install poetry-plugin-export==1.7.0
-    - name: Install Nox
-      run: |
-        pip install nox==2024.03.02
-        pip install nox-poetry==1.0.3
-    - name: Run tests
-      run: nox --non-interactive --error-on-missing-interpreter --session "tests-${{ matrix.python-version }}"
-  
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        run: |
+          pip install poetry==1.8.2
+          pip install poetry-plugin-export==1.7.0
+      - name: Install Nox
+        run: |
+          pip install nox==2024.03.02
+          pip install nox-poetry==1.0.3
+      - name: Run tests
+        run: nox --non-interactive --error-on-missing-interpreter --session "tests-${{ matrix.python-version }}"
+
   lint:
     runs-on: ubuntu-22.04
     steps:
@@ -50,4 +50,4 @@ jobs:
           pip install nox==2024.03.02
           pip install nox-poetry==1.0.3
       - name: Lint
-        run: nox --non-interactive --error-on-missing-interpreter --session "lint"
+        run: nox --non-interactive --error-on-missing-interpreter --session "precommit"
