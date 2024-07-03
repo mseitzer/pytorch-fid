@@ -33,6 +33,7 @@ limitations under the License.
 """
 
 import os
+import glob
 import pathlib
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
@@ -268,9 +269,7 @@ def compute_statistics_of_path(path, model, batch_size, dims, device, num_worker
             m, s = f["mu"][:], f["sigma"][:]
     else:
         path = pathlib.Path(path)
-        files = sorted(
-            [file for ext in IMAGE_EXTENSIONS for file in path.glob("*.{}".format(ext))]
-        )
+        files = sorted([file for ext in IMAGE_EXTENSIONS for file in glob.glob(os.path.join(path, '**/*.{}'.format(ext)), recursive=True)]) # 支持递归搜索子目录
         m, s = calculate_activation_statistics(
             files, model, batch_size, dims, device, num_workers
         )

@@ -18,7 +18,7 @@ The weights and the model are exactly the same as in [the official Tensorflow im
 Install from [pip](https://pypi.org/project/pytorch-fid/):
 
 ```
-pip install pytorch-fid
+pip install git+https://github.com/XavierJiezou/pytorch-fid.git
 ```
 
 Requirements:
